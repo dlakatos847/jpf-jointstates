@@ -2,16 +2,18 @@
 <project xmlns="http://www.netbeans.org/ns/project/1">
     <type>org.netbeans.modules.ant.freeform</type>
     <configuration>
-        <general-data xmlns="http://www.netbeans.org/ns/freeform-project/1">
-            <name>jpf-template</name>
-        </general-data>
         <general-data xmlns="http://www.netbeans.org/ns/freeform-project/2">
             <!-- Do not use Project Properties customizer when editing this file manually. -->
-            <name>jpf-template</name>
+            <name>jpf-jointstates</name>
 
             <properties>
+                <property-file>../site.properties</property-file>
                 <property-file>${user.home}/.jpf/site.properties</property-file>
+
+                <!-- dependent projects that are defined in site.properties -->
                 <property-file>${jpf-core}/jpf.properties</property-file>
+
+                <!-- our own jpf.properties -->
                 <property name="config_path">.</property>
                 <property-file>jpf.properties</property-file>
             </properties>
@@ -222,12 +224,12 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>src/main</package-root>
-                <classpath mode="compile">build/main;${jpf-core.native_classpath};${jpf-template.native_classpath}</classpath>
+                <classpath mode="compile">build/main;${jpf-core.native_classpath};${jpf-jointstates.native_classpath}</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/peers</package-root>
-                <classpath mode="compile">build/main;${jpf-core.native_classpath};</classpath>
+                <classpath mode="compile">build/main;build/peers;${jpf-core.native_classpath};${jpf-jointstates.native_classpath}</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
