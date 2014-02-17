@@ -1,0 +1,9 @@
+#/bin/sh
+
+JPF_HOME=`dirname $0`/..
+
+echo $JPF_HOME
+
+JAVA_FLAGS='-Xmx1024m'
+
+java $JAVA_FLAGS -classpath $JPF_HOME/build/examples hu.bme.mit.ftsrg.jointstates.examples.DummyServer $@

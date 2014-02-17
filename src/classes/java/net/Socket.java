@@ -1,3 +1,7 @@
+package java.net;
+
+
+
 //
 // Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
@@ -17,10 +21,45 @@
 // DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
 //
 
-package hu.bme.mit.ftsrg.jointstates.listener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-import gov.nasa.jpf.PropertyListenerAdapter;
+public class Socket {
 
-public class JointstatesDistributedListener extends PropertyListenerAdapter {
+  private int socketId;
+  private static int seq_socketId;
+
+  static {
+    seq_socketId = 1;
+  }
+
+  public Socket(InetAddress addr, int port) {
+    socketId = seq_socketId;
+    seq_socketId++;
+    native_createSocket(socketId, addr.getHostAddress(), port);
+  }
+
+  public OutputStream getOutputStream() throws IOException {
+    return new OutputStream(socketId);
+  }
+
+  public void close() throws IOException {
+    native_closeSocket(socketId);
+  }
+
+  @Override
+  public String toString() {
+    return "Model class socket";
+  }
+
+  private native void native_createSocket(int socketId, String addr, int port);
+
+  private native void native_closeSocket(int socketId);
+
+  public InputStream getInputStream() {
+    // TODO Auto-generated method stub
+    return null;
+  }
 
 }

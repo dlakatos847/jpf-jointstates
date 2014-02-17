@@ -1,3 +1,5 @@
 # Dummy JPF config
 target=hu.bme.mit.ftsrg.jointstates.examples.DummyClient
 listener=hu.bme.mit.ftsrg.jointstates.listener.JointstatesDistributedListener
+report.console.property_violation=error,snapshot,trace
+#shell=.shell.basicshell.BasicShell
