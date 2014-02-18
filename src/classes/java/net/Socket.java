@@ -1,7 +1,5 @@
 package java.net;
 
-
-
 //
 // Copyright (C) 2006 United States Government as represented by the
 // Administrator of the National Aeronautics and Space Administration
@@ -27,17 +25,23 @@ import java.io.OutputStream;
 
 public class Socket {
 
-  private int socketId;
-  private static int seq_socketId;
+  private int socketId = -1;
+  private static int seq_socketId = 0;
 
-  static {
-    seq_socketId = 1;
+  public Socket() {
+    socketId = seq_socketId;
+    seq_socketId++;
+    native_createSocket(socketId);
   }
 
   public Socket(InetAddress addr, int port) {
     socketId = seq_socketId;
     seq_socketId++;
     native_createSocket(socketId, addr.getHostAddress(), port);
+  }
+
+  public InputStream getInputStream() {
+    return new InputStream(socketId);
   }
 
   public OutputStream getOutputStream() throws IOException {
@@ -53,13 +57,14 @@ public class Socket {
     return "Model class socket";
   }
 
+  private native void native_createSocket(int socketId);
+
   private native void native_createSocket(int socketId, String addr, int port);
 
   private native void native_closeSocket(int socketId);
 
-  public InputStream getInputStream() {
-    // TODO Auto-generated method stub
-    return null;
+  public int getSocketId() {
+    return socketId;
   }
 
 }
