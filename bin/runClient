@@ -1,8 +1,6 @@
 #/bin/sh
 
-JPF_HOME=`basename $0`/..
-
-echo $JPF_HOME
+JPF_HOME=`dirname $0`/..
 
 JAVA_FLAGS='-Xmx1024m'
 

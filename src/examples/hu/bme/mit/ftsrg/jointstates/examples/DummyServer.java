@@ -5,7 +5,8 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class DummyServer extends Thread {
+public class DummyServer {
+  // extends Thread {
   // @Override
   // public void run() {
   // System.out.println("1111");
