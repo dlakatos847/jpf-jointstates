@@ -1,0 +1,8 @@
+#/bin/sh
+
+JPF_HOME=`dirname $0`/..
+JPF_CORE_HOME=$JPF_HOME/../jpf-core
+
+JAVA_FLAGS='-Xmx1024m'
+
+java $JAVA_FLAGS -classpath "$JPF_CORE_HOME/build/main;$JPF_HOME/build/classes" gov.nasa.jpf.tool.GenPeer -m $@
