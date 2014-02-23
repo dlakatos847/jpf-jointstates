@@ -9,12 +9,11 @@ import java.util.Hashtable;
 import java.util.Map;
 
 public class JPF_java_net_ServerSocket extends NativePeer {
-  
-  private ServerSocket serverSocket;
-  public static Map<Integer,ServerSocket> serverSocketMapping;
-  
-  static{
-    serverSocketMapping = new Hashtable<Integer,ServerSocket>();
+
+  public static Map<Integer, ServerSocket> serverSocketMapping;
+
+  static {
+    serverSocketMapping = new Hashtable<Integer, ServerSocket>();
   }
 
   @MJI
@@ -22,16 +21,17 @@ public class JPF_java_net_ServerSocket extends NativePeer {
   }
 
   @MJI
-  public void native_createServerSocket__II__V (MJIEnv env, int objRef, int v0, int v1) throws IOException {
-    serverSocket = new ServerSocket(v1);
-    serverSocketMapping.put(v0, serverSocket);
+  public void native_createServerSocket__II__V(MJIEnv env, int objRef, int v0, int v1) throws IOException {
+    if (!serverSocketMapping.containsKey(v0)) {
+      serverSocketMapping.put(v0, new ServerSocket(v1));
+    } 
   }
 
   @MJI
-  public int native_accept__I__I(MJIEnv env, int objRef, int v0) {
+  public int native_accept__II__I(MJIEnv env, int objRef, int v0, int v1) throws IOException {
     int v = (int) 0;
-    Socket s = serverSocket.accept();
-    JPF_java_net_Socket.socketMapping.put(v0, s);
+    Socket s = serverSocketMapping.get(v0).accept();
+    JPF_java_net_Socket.socketMapping.put(v1, s);
     return v;
   }
 
