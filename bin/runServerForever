@@ -1,0 +1,9 @@
+#/bin/sh
+
+JPF_HOME=`dirname $0`/..
+
+JAVA_FLAGS='-Xmx1024m'
+
+while [ 1 -gt 0 ];do
+	java $JAVA_FLAGS -classpath $JPF_HOME/build/examples hu.bme.mit.ftsrg.jointstates.examples.DummyServer $@;
+done
