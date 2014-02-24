@@ -1,5 +1,6 @@
 package gov.nasa.jpf.vm;
 
+import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.annotation.MJI;
 
 import java.io.IOException;
@@ -7,32 +8,34 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class JPF_java_net_ServerSocket extends NativePeer {
-
-  public static Map<Integer, ServerSocket> serverSocketMapping;
+  private static Logger log = JPF.getLogger(JPF_java_net_ServerSocket.class.getCanonicalName());
+  private static Map<Integer, ServerSocket> serverSocketPorts;
 
   static {
-    serverSocketMapping = new Hashtable<Integer, ServerSocket>();
-  }
-
-  @MJI
-  public void native_closeServerSocket__I__V(MJIEnv env, int objRef, int v0) {
-  }
-
-  @MJI
-  public void native_createServerSocket__II__V(MJIEnv env, int objRef, int v0, int v1) throws IOException {
-    if (!serverSocketMapping.containsKey(v0)) {
-      serverSocketMapping.put(v0, new ServerSocket(v1));
-    } 
+    serverSocketPorts = new Hashtable<Integer, ServerSocket>();
   }
 
   @MJI
   public int native_accept__II__I(MJIEnv env, int objRef, int v0, int v1) throws IOException {
-    int v = (int) 0;
-    Socket s = serverSocketMapping.get(v0).accept();
+    ServerSocket ss = serverSocketPorts.get(v0);
+
+    log.info("SERVERSOCKET.ACCEPT " + v0);
+    Socket s = ss.accept();
+
+    // TODO i don't like this
     JPF_java_net_Socket.socketMapping.put(v1, s);
-    return v;
+
+    return 0;
+  }
+
+  @MJI
+  public void native_createServerSocket__I__V(MJIEnv env, int objRef, int v0) throws IOException {
+    if (!serverSocketPorts.containsKey(v0)) {
+      serverSocketPorts.put(v0, new ServerSocket(v0));
+    }
   }
 
 }

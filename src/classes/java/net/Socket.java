@@ -24,32 +24,41 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class Socket {
-
   private int socketId = -1;
   private static int seq_socketId = 0;
 
   public Socket() {
-    socketId = seq_socketId;
-    seq_socketId++;
-    native_createSocket(socketId);
+    this.socketId = nextSeqId();
+    native_createSocket(this.socketId);
   }
 
   public Socket(InetAddress addr, int port) {
-    socketId = seq_socketId;
+    this.socketId = seq_socketId;
     seq_socketId++;
-    native_createSocket(socketId, addr.getHostAddress(), port);
+    native_createSocket(this.socketId, addr.getHostAddress(), port);
+  }
+
+  /**
+   * Generates unique Socket IDs
+   * 
+   * @return the next ID
+   */
+  private int nextSeqId() {
+    int currSeqId = Socket.seq_socketId;
+    seq_socketId++;
+    return currSeqId;
   }
 
   public InputStream getInputStream() {
-    return new InputStream(socketId);
+    return new InputStream(this.socketId);
   }
 
   public OutputStream getOutputStream() throws IOException {
-    return new OutputStream(socketId);
+    return new OutputStream(this.socketId);
   }
 
   public void close() throws IOException {
-    native_closeSocket(socketId);
+    native_closeSocket(this.socketId);
   }
 
   @Override
@@ -64,7 +73,7 @@ public class Socket {
   private native void native_closeSocket(int socketId);
 
   public int getSocketId() {
-    return socketId;
+    return this.socketId;
   }
 
 }

@@ -6,18 +6,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class DummyServer extends Thread {
-  @Override
-  public void run() {
-    System.out.println("1111");
-    System.out.println("2222");
-    System.out.println("3333");
-    System.out.println("THREAD EXIT");
+  int port = -1;
+
+  public DummyServer(int port) {
+    this.port = port;
   }
 
-  public static void main(String[] args) {
+  @Override
+  public void run() {
+    System.out.println("THREAD ENTER " + this.port);
     try {
-      new DummyServer().start();
-      ServerSocket serverSocket = new ServerSocket(8080);
+      ServerSocket serverSocket = new ServerSocket(this.port);
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
       int input = is.read();
@@ -27,5 +26,16 @@ public class DummyServer extends Thread {
     } catch (IOException e) {
       e.printStackTrace();
     }
+    System.out.println("THREAD EXIT " + this.port);
+  }
+
+  public static void main(String[] args) {
+    System.out.println("START THREAD " + 8080);
+    new DummyServer(8080).start();
+    System.out.println("STARTED THREAD " + 8080);
+
+    System.out.println("START THREAD " + 8081);
+    new DummyServer(8081).start();
+    System.out.println("STARTED THREAD " + 8081);
   }
 }

@@ -16,7 +16,7 @@ public class DummyClient {
       InetAddress addr = InetAddress.getByName(hostName);
       System.out.println("addr: " + addr);
 
-      int portNumber = 8080;
+      int portNumber = Integer.parseInt(args[0]);
       socket = new Socket(addr, portNumber);
       System.out.println("socket: " + socket);
 
