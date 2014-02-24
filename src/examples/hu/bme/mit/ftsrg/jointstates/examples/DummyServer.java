@@ -20,7 +20,7 @@ public class DummyServer extends Thread {
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
       int input = is.read();
-      System.out.println(input);
+      System.out.println("RECEIVED INPUT: " + input);
       socket.close();
       serverSocket.close();
     } catch (IOException e) {
@@ -30,12 +30,21 @@ public class DummyServer extends Thread {
   }
 
   public static void main(String[] args) {
-    System.out.println("START THREAD " + 8080);
-    new DummyServer(8080).start();
-    System.out.println("STARTED THREAD " + 8080);
+    class DummyPrinter extends Thread {
+      @Override
+      public void run() {
+        System.out.println("1111");
+        System.out.println("2222");
+        System.out.println("3333");
+      }
+    }
 
-    System.out.println("START THREAD " + 8081);
+    System.out.println("STARTED MAIN");
+
+    new DummyPrinter().start();
+    new DummyServer(8080).start();
     new DummyServer(8081).start();
-    System.out.println("STARTED THREAD " + 8081);
+
+    System.out.println("ENDED MAIN");
   }
 }

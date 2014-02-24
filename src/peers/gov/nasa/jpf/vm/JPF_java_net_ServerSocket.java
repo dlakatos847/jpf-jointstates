@@ -25,7 +25,7 @@ public class JPF_java_net_ServerSocket extends NativePeer {
     log.info("SERVERSOCKET.ACCEPT " + v0);
     Socket s = ss.accept();
 
-    // TODO i don't like this
+    // TODO @David Lakatos: i don't like this
     JPF_java_net_Socket.socketMapping.put(v1, s);
 
     return 0;

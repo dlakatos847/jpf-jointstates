@@ -1,0 +1,4 @@
+# Dummy JPF config
+target=hu.bme.mit.ftsrg.jointstates.examples.DummyServer
+listener=hu.bme.mit.ftsrg.jointstates.listener.JointstatesInterveningListener
+log.level = info
