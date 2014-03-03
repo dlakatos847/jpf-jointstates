@@ -14,7 +14,7 @@ public class DummyServer extends Thread {
 
   @Override
   public void run() {
-    System.out.println("THREAD ENTER " + this.port);
+    // System.out.println("THREAD ENTER " + this.port);
     try {
       ServerSocket serverSocket = new ServerSocket(this.port);
       Socket socket = serverSocket.accept();
@@ -26,25 +26,25 @@ public class DummyServer extends Thread {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    System.out.println("THREAD EXIT " + this.port);
+    // System.out.println("THREAD EXIT " + this.port);
   }
 
   public static void main(String[] args) {
-    class DummyPrinter extends Thread {
-      @Override
-      public void run() {
-        System.out.println("1111");
-        System.out.println("2222");
-        System.out.println("3333");
-      }
-    }
+    // class DummyPrinter extends Thread {
+    // @Override
+    // public void run() {
+    // System.out.println("1111");
+    // System.out.println("2222");
+    // System.out.println("3333");
+    // }
+    // }
 
-    System.out.println("STARTED MAIN");
+    // System.out.println("STARTED MAIN");
 
-    new DummyPrinter().start();
+    // new DummyPrinter().start();
     new DummyServer(8080).start();
-    new DummyServer(8081).start();
+    // new DummyServer(8081).start();
 
-    System.out.println("ENDED MAIN");
+    // System.out.println("ENDED MAIN");
   }
 }

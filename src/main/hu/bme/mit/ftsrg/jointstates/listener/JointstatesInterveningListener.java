@@ -23,7 +23,7 @@ public class JointstatesInterveningListener extends ListenerAdapter {
   @Override
   public void searchStarted(Search search) {
     // TODO Auto-generated method stub
-    sendHeartbeatRequest();
+    // sendHeartbeatRequest();
     super.searchStarted(search);
   }
 
@@ -32,6 +32,7 @@ public class JointstatesInterveningListener extends ListenerAdapter {
     // TODO Auto-generated method stub
     // if(instructionToExecute instanceof gov.nasa.jpf.jvm.bytecode.)
     super.executeInstruction(vm, currentThread, instructionToExecute);
+
   }
 
   public void sendHeartbeatRequest() {
