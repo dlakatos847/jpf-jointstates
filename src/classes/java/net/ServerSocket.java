@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ServerSocket implements Closeable {
+
+  private static int acceptDepth = 0;
+
   /**
    * Sequence for unique ID generation
    */
@@ -50,6 +53,12 @@ public class ServerSocket implements Closeable {
    */
   public Socket accept() throws SocketException {
     Socket s;
+
+    /*
+     * Stepping ServerSocket.accept() depth
+     */
+    ServerSocket.acceptDepth++;
+    System.out.println("ServerSocket.acceptDepth: " + ServerSocket.acceptDepth);
 
     if (isClosed()) {
       throw new SocketException("Socket is closed");

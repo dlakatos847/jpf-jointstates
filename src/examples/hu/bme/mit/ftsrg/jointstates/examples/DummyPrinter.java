@@ -9,7 +9,7 @@ public class DummyPrinter implements Runnable {
 
   public static void main(String[] args) {
     new Thread(new DummyPrinter("A")).start();
-    new Thread(new DummyPrinter("B")).start();
+    // new Thread(new DummyPrinter("B")).start();
   }
 
   @Override
