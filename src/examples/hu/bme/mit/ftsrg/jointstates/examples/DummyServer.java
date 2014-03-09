@@ -17,6 +17,7 @@ public class DummyServer extends Thread {
     // System.out.println("THREAD ENTER " + this.port);
     try {
       ServerSocket serverSocket = new ServerSocket(this.port);
+      System.out.println("Calling serverSocket.accept()");
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
       int input = is.read();

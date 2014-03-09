@@ -58,13 +58,13 @@ public class ServerSocket implements Closeable {
      * Stepping ServerSocket.accept() depth
      */
     ServerSocket.acceptDepth++;
-    System.out.println("ServerSocket.acceptDepth: " + ServerSocket.acceptDepth);
 
     if (isClosed()) {
       throw new SocketException("Socket is closed");
     }
 
     s = new Socket();
+    System.out.println("Calling native_accept");
     native_accept(this.port, s.getSocketId());
     return s;
   }

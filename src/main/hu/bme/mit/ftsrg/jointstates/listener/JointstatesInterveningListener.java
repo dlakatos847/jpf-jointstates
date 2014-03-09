@@ -5,10 +5,12 @@ import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ChoiceGenerator;
+import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.RestorableVMState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
+import hu.bme.mit.ftsrg.jointstates.JointstatesAttributor;
 import hu.bme.mit.ftsrg.jointstates.server.ServerPortCollector;
 
 import java.io.IOException;
@@ -39,13 +41,13 @@ public class JointstatesInterveningListener extends ListenerAdapter {
   @Override
   public void executeInstruction(VM vm, ThreadInfo currentThread, Instruction instructionToExecute) {
     super.executeInstruction(vm, currentThread, instructionToExecute);
-    if (instructionToExecute.getMethodInfo().getName().equals("accept")) {
-      if (instructionToExecute instanceof InstanceInvocation) {
-        InstanceInvocation ii = (InstanceInvocation) instructionToExecute;
-        if (currentThread.getElementInfo(ii.getCalleeThis(currentThread)) != null) {
-          System.out.println(currentThread.getElementInfo(ii.getCalleeThis(currentThread)).getIntField("port"));
-        }
-      }
+    if ((instructionToExecute.getMethodInfo().getAttr() == JointstatesAttributor.serverSocketAcceptFlag)
+        && (instructionToExecute instanceof InstanceInvocation)) {
+      InstanceInvocation ii = (InstanceInvocation) instructionToExecute;
+      int callerRef = ii.getCalleeThis(currentThread);
+      ElementInfo serverSocketElementInfo = vm.getHeap().get(callerRef);
+      int port = serverSocketElementInfo.getIntField("port");
+      System.out.println(">>>" + port);
     }
   }
 
