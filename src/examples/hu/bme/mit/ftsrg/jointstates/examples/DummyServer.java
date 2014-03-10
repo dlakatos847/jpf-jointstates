@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class DummyServer extends Thread {
+public class DummyServer implements Runnable {
   int port = -1;
 
   public DummyServer(int port) {
@@ -21,7 +21,7 @@ public class DummyServer extends Thread {
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
       int input = is.read();
-      System.out.println("RECEIVED INPUT: " + input);
+      System.out.println("RECEIVED INPUT " + input + " on port " + this.port);
       socket.close();
       serverSocket.close();
     } catch (IOException e) {
@@ -40,12 +40,14 @@ public class DummyServer extends Thread {
     // }
     // }
 
-    // System.out.println("STARTED MAIN");
+    System.out.println("STARTED MAIN");
 
-    // new DummyPrinter().start();
-    new DummyServer(8080).start();
-    // new DummyServer(8081).start();
+    for (String input : args) {
+      int port = Integer.parseInt(input);
+      Thread t = new Thread(new DummyServer(port));
+      t.start();
+    }
 
-    // System.out.println("ENDED MAIN");
+    System.out.println("ENDED MAIN");
   }
 }

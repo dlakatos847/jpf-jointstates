@@ -2,7 +2,7 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.annotation.MJI;
-import hu.bme.mit.ftsrg.jointstates.server.ServerPortCollector;
+import hu.bme.mit.ftsrg.jointstates.collector.PortCollector;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -25,7 +25,7 @@ public class JPF_java_net_ServerSocket extends NativePeer {
     Socket s;
 
     log.info("SERVERSOCKET.ACCEPT " + v0);
-    ServerPortCollector.addListeningPort(v0);
+    PortCollector.addAcceptPort(v0);
 
     s = ss.accept();
 

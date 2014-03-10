@@ -15,12 +15,29 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates;
+package hu.bme.mit.ftsrg.jointstates.core;
+
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.vm.DefaultAttributor;
+import gov.nasa.jpf.vm.MethodInfo;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class Jointstates {
+public class JointstatesAttributor extends DefaultAttributor {
 
+  public static final Object serverSocketAcceptFlag = new Object();
+
+  public JointstatesAttributor(Config conf) {
+    super(conf);
+  }
+
+  @Override
+  public void setMethodInfoAttributes(MethodInfo mi) {
+    super.setMethodInfoAttributes(mi);
+    if (mi.getClassInfo().getName().equals("java.net.ServerSocket") && mi.getUniqueName().equals("accept()Ljava/net/Socket;")) {
+      mi.setAttr(serverSocketAcceptFlag);
+    }
+  }
 }

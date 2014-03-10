@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 public class JPF_java_net_Socket extends NativePeer {
+  // socketID --> socket
   public static Map<Integer, Socket> socketMapping;
 
   static {
@@ -29,7 +30,8 @@ public class JPF_java_net_Socket extends NativePeer {
     int port = v2;
 
     InetAddress addr = InetAddress.getByName(hostName);
-    socketMapping.put(v0, new Socket(addr, port));
+    Socket s = new Socket(addr, port);
+    socketMapping.put(v0, s);
   }
 
   @MJI

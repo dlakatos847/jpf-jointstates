@@ -15,12 +15,17 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates;
+package java.net;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class Jointstates {
+public class SocketAddress implements java.io.Serializable {
+
+  /**
+   * Random generated serial ID
+   */
+  private static final long serialVersionUID = 8519141614243069573L;
 
 }

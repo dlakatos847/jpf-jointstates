@@ -15,12 +15,42 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates;
+package hu.bme.mit.ftsrg.jointstates.collector;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class Jointstates {
+public class PortCollector {
+  private static int currentLevel = 0;
+  protected static final Map<Integer, Set<Integer>> portsByLevels = new HashMap<Integer, Set<Integer>>();
 
+  static {
+    nextLevel();
+  }
+
+  public static boolean addPort(int port) {
+    if (!portsByLevels.containsKey(currentLevel)) {
+      portsByLevels.put(currentLevel, new HashSet<Integer>());
+    }
+    return portsByLevels.get(currentLevel).add(port);
+  }
+
+  public static Set<Integer> getPorts() {
+    return portsByLevels.get(currentLevel);
+  }
+
+  public static int getCurrentLevel() {
+    return currentLevel;
+  }
+
+  public static void nextLevel() {
+    currentLevel++;
+    portsByLevels.put(currentLevel, new HashSet<Integer>());
+  }
 }

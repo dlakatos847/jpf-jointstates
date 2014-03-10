@@ -15,12 +15,28 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates;
+package hu.bme.mit.ftsrg.jointstates.core;
+
+import gov.nasa.jpf.jvm.bytecode.InstructionFactory;
+import gov.nasa.jpf.vm.Instruction;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class Jointstates {
+public class JointstatesInstructionFactory extends InstructionFactory {
+  public static final Object acceptFlag = new Object();
+  public static final Object connectFlag = new Object();
+
+  @Override
+  public Instruction invokevirtual(String clsName, String methodName, String methodSignature) {
+    Instruction i = super.invokevirtual(clsName, methodName, methodSignature);
+    if (clsName.equals("java/net/Socket") && methodName.equals("connect")) {
+      i.setAttr(connectFlag);
+    } else if (clsName.equals("java/net/ServerSocket") && methodName.equals("accept")) {
+      i.setAttr(acceptFlag);
+    }
+    return i;
+  }
 
 }

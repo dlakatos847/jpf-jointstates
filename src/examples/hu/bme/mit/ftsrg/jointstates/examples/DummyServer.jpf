@@ -1,4 +1,5 @@
 # Dummy JPF config
 target=hu.bme.mit.ftsrg.jointstates.examples.DummyServer
-listener=hu.bme.mit.ftsrg.jointstates.listener.JointstatesInterveningListener,gov.nasa.jpf.listener.SimpleDot,hu.bme.mit.ftsrg.jointstates.listener.DFSearchLimitListener
-log.level = info
+jointstates.side=server
+#,gov.nasa.jpf.listener.SimpleDot
+log.level=info

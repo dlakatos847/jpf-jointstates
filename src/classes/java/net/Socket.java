@@ -26,6 +26,7 @@ import java.io.OutputStream;
 public class Socket {
   private int socketId = -1;
   private static int seq_socketId = 0;
+  private int port = -1;
 
   public Socket() {
     this.socketId = nextSeqId();
@@ -33,8 +34,14 @@ public class Socket {
   }
 
   public Socket(InetAddress addr, int port) {
-    this.socketId = seq_socketId;
-    seq_socketId++;
+    this.socketId = nextSeqId();
+    this.port = port;
+    try {
+      connect(null, 0);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
     native_createSocket(this.socketId, addr.getHostAddress(), port);
   }
 
@@ -47,6 +54,10 @@ public class Socket {
     int currSeqId = Socket.seq_socketId;
     seq_socketId++;
     return currSeqId;
+  }
+
+  public void connect(SocketAddress endpoint, int timeout) throws IOException {
+
   }
 
   public InputStream getInputStream() {
