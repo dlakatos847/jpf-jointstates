@@ -17,38 +17,10 @@
  */
 package hu.bme.mit.ftsrg.jointstates.collector;
 
-import java.util.LinkedList;
-import java.util.Queue;
-
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
- * 
+ *
  */
-public class StateCollector {
-  private static final Queue<BfsState> bfsRestorableStates = new LinkedList<BfsState>();
-  private static final Queue<ApproachedState> approachedStates = new LinkedList<ApproachedState>();
+public class ClientMessageCollector {
 
-  public static void addBfsState(BfsState state) {
-    bfsRestorableStates.add(state);
-  }
-
-  public static BfsState getBfsState() {
-    return bfsRestorableStates.poll();
-  }
-
-  public static int getBfsStateCount() {
-    return bfsRestorableStates.size();
-  }
-
-  public static void addApproachedState(ApproachedState state) {
-    approachedStates.add(state);
-  }
-
-  public static ApproachedState getApproachedState() {
-    return approachedStates.poll();
-  }
-
-  public static int getApproachedStateCount() {
-    return approachedStates.size();
-  }
 }

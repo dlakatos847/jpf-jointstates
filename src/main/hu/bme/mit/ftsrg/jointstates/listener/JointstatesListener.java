@@ -17,7 +17,6 @@
  */
 package hu.bme.mit.ftsrg.jointstates.listener;
 
-import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
@@ -26,9 +25,11 @@ import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
+import hu.bme.mit.ftsrg.jointstates.collector.ApproachedState;
 import hu.bme.mit.ftsrg.jointstates.collector.PortCollector;
 import hu.bme.mit.ftsrg.jointstates.collector.StateCollector;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
+import hu.bme.mit.ftsrg.jointstates.search.JointstatesSearch;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,10 +43,6 @@ import java.util.logging.Logger;
  */
 public class JointstatesListener extends ListenerAdapter {
   protected static final Logger logger = JPF.getLogger(JointstatesListener.class.getCanonicalName());
-  public static final Object clientSide = new Object();
-  public static final Object serverSide = new Object();
-
-  protected Object side = null;
 
   /*
    * Make sure jpf-jointstates master-JPF is available (non-Javadoc)
@@ -55,23 +52,6 @@ public class JointstatesListener extends ListenerAdapter {
   public void searchStarted(Search search) {
     super.searchStarted(search);
 
-    Config config = search.getVM().getConfig();
-    String sideConfig = config.getString("jointstates.side");
-
-    // jointstates.side missing
-    if (sideConfig == null) {
-      logger.severe("jointstates.side parameter is missing. Allowed values are: [client, server]");
-      search.terminate();
-    }
-
-    if (sideConfig.equals("client")) {
-      this.side = JointstatesListener.clientSide;
-    } else if (sideConfig.equals("server")) {
-      this.side = JointstatesListener.serverSide;
-    } else {
-      logger.severe("jointstates.side parameter has invalid value. Allowed values are: [client, server]");
-      search.terminate();
-    }
     // sendHeartbeatRequest();
   }
 
@@ -84,16 +64,17 @@ public class JointstatesListener extends ListenerAdapter {
   public void executeInstruction(VM vm, ThreadInfo currentThread, Instruction instructionToExecute) {
     super.executeInstruction(vm, currentThread, instructionToExecute);
 
-    if (this.side == clientSide) {
-      // Socket ctor
+    if (JointstatesSearch.side == JointstatesSearch.clientSide) {
+      // Socket.connect()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.connectFlag)) {
         InstanceInvocation ii = (InstanceInvocation) instructionToExecute;
-        // Save current state to continue model checking from this point later
-        StateCollector.addClientState(vm.getRestorableState());
         int callerRef = ii.getCalleeThis(currentThread);
         ElementInfo socketElementInfo = vm.getHeap().get(callerRef);
         int port = socketElementInfo.getIntField("port");
         logger.info("connect to port " + port);
+
+        // Save current state to continue model checking from this point later
+        StateCollector.addApproachedState(new ApproachedState(port, vm.getRestorableState()));
         PortCollector.addPort(port);
 
         // Reached the next connect() level, backtrack
@@ -101,16 +82,17 @@ public class JointstatesListener extends ListenerAdapter {
       }
     }
 
-    if (this.side == serverSide) {
+    if (JointstatesSearch.side == JointstatesSearch.serverSide) {
       // ServerSocket.accept()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.acceptFlag)) {
         InstanceInvocation ii = (InstanceInvocation) instructionToExecute;
-        // Save current state to continue model checking from this point later
-        StateCollector.addServerState(vm.getRestorableState());
         int callerRef = ii.getCalleeThis(currentThread);
         ElementInfo serverSocketElementInfo = vm.getHeap().get(callerRef);
         int port = serverSocketElementInfo.getIntField("port");
         logger.info("accept on port " + port);
+
+        // Save current state to continue model checking from this point later
+        StateCollector.addApproachedState(new ApproachedState(port, vm.getRestorableState()));
         PortCollector.addPort(port);
 
         // Reached the next accept() level, backtrack
@@ -122,13 +104,13 @@ public class JointstatesListener extends ListenerAdapter {
   @Override
   public void searchFinished(Search search) {
     super.searchFinished(search);
-    if (this.side == clientSide) {
-      logger.info("Restorable client states: " + StateCollector.getClientStateSize());
+    if (JointstatesSearch.side == JointstatesSearch.clientSide) {
+      logger.info("Restorable client states: " + StateCollector.getBfsStateCount());
       for (int i : PortCollector.getPorts()) {
         logger.info("connect port: " + i);
       }
     } else {
-      logger.info("restorable server states: " + StateCollector.getServerStateSize());
+      logger.info("restorable server states: " + StateCollector.getBfsStateCount());
       for (int i : PortCollector.getPorts()) {
         logger.info("accept port: " + i);
       }

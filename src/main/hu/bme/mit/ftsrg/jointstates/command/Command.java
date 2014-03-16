@@ -15,40 +15,42 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates.collector;
+package hu.bme.mit.ftsrg.jointstates.command;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.io.Serializable;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class StateCollector {
-  private static final Queue<BfsState> bfsRestorableStates = new LinkedList<BfsState>();
-  private static final Queue<ApproachedState> approachedStates = new LinkedList<ApproachedState>();
+public class Command implements Serializable {
+  private static final long serialVersionUID = -3912483750386002090L;
+  private CommandType type;
+  private int port;
+  private Object message;
 
-  public static void addBfsState(BfsState state) {
-    bfsRestorableStates.add(state);
+  /**
+   * @param type
+   * @param port
+   * @param message
+   */
+  public Command(CommandType type, int port, Object message) {
+    super();
+    this.type = type;
+    this.port = port;
+    this.message = message;
   }
 
-  public static BfsState getBfsState() {
-    return bfsRestorableStates.poll();
+  public CommandType getType() {
+    return this.type;
   }
 
-  public static int getBfsStateCount() {
-    return bfsRestorableStates.size();
+  public int getPort() {
+    return this.port;
   }
 
-  public static void addApproachedState(ApproachedState state) {
-    approachedStates.add(state);
+  public Object getMessage() {
+    return this.message;
   }
 
-  public static ApproachedState getApproachedState() {
-    return approachedStates.poll();
-  }
-
-  public static int getApproachedStateCount() {
-    return approachedStates.size();
-  }
 }

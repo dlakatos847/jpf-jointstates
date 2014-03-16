@@ -25,7 +25,7 @@ public class JPF_java_net_ServerSocket extends NativePeer {
     Socket s;
 
     log.info("SERVERSOCKET.ACCEPT " + v0);
-    PortCollector.addAcceptPort(v0);
+    PortCollector.addPort(v0);
 
     s = ss.accept();
 

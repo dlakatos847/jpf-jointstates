@@ -17,38 +17,34 @@
  */
 package hu.bme.mit.ftsrg.jointstates.collector;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import gov.nasa.jpf.vm.RestorableVMState;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class StateCollector {
-  private static final Queue<BfsState> bfsRestorableStates = new LinkedList<BfsState>();
-  private static final Queue<ApproachedState> approachedStates = new LinkedList<ApproachedState>();
+public class BfsState extends ApproachedState {
+  protected Object message;
 
-  public static void addBfsState(BfsState state) {
-    bfsRestorableStates.add(state);
+  /**
+   * @param port
+   * @param state
+   */
+  private BfsState(int port, RestorableVMState state) {
+    super(port, state);
   }
 
-  public static BfsState getBfsState() {
-    return bfsRestorableStates.poll();
+  /**
+   * @param port
+   * @param state
+   * @param message
+   */
+  public BfsState(int port, RestorableVMState state, Object message) {
+    super(port, state);
+    this.message = message;
   }
 
-  public static int getBfsStateCount() {
-    return bfsRestorableStates.size();
-  }
-
-  public static void addApproachedState(ApproachedState state) {
-    approachedStates.add(state);
-  }
-
-  public static ApproachedState getApproachedState() {
-    return approachedStates.poll();
-  }
-
-  public static int getApproachedStateCount() {
-    return approachedStates.size();
+  public Object getMessage() {
+    return this.message;
   }
 }
