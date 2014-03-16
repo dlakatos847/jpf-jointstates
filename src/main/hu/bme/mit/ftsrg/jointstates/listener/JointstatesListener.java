@@ -23,6 +23,7 @@ import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.RestorableVMState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import hu.bme.mit.ftsrg.jointstates.collector.ApproachedState;
@@ -64,17 +65,22 @@ public class JointstatesListener extends ListenerAdapter {
   public void executeInstruction(VM vm, ThreadInfo currentThread, Instruction instructionToExecute) {
     super.executeInstruction(vm, currentThread, instructionToExecute);
 
+    InstanceInvocation ii;
+    int callerRef;
+    ElementInfo elementInfo;
+    int port;
+
     if (JointstatesSearch.side == JointstatesSearch.clientSide) {
       // Socket.connect()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.connectFlag)) {
-        InstanceInvocation ii = (InstanceInvocation) instructionToExecute;
-        int callerRef = ii.getCalleeThis(currentThread);
-        ElementInfo socketElementInfo = vm.getHeap().get(callerRef);
-        int port = socketElementInfo.getIntField("port");
+        ii = (InstanceInvocation) instructionToExecute;
+        callerRef = ii.getCalleeThis(currentThread);
+        elementInfo = vm.getHeap().get(callerRef);
+        port = elementInfo.getIntField("port");
         logger.info("connect to port " + port);
 
         // Save current state to continue model checking from this point later
-        StateCollector.addApproachedState(new ApproachedState(port, vm.getRestorableState()));
+        addApproachedState(vm.getSearch(), port, vm.getRestorableState());
         PortCollector.addPort(port);
 
         // Reached the next connect() level, backtrack
@@ -85,20 +91,24 @@ public class JointstatesListener extends ListenerAdapter {
     if (JointstatesSearch.side == JointstatesSearch.serverSide) {
       // ServerSocket.accept()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.acceptFlag)) {
-        InstanceInvocation ii = (InstanceInvocation) instructionToExecute;
-        int callerRef = ii.getCalleeThis(currentThread);
-        ElementInfo serverSocketElementInfo = vm.getHeap().get(callerRef);
-        int port = serverSocketElementInfo.getIntField("port");
+        ii = (InstanceInvocation) instructionToExecute;
+        callerRef = ii.getCalleeThis(currentThread);
+        elementInfo = vm.getHeap().get(callerRef);
+        port = elementInfo.getIntField("port");
         logger.info("accept on port " + port);
 
         // Save current state to continue model checking from this point later
-        StateCollector.addApproachedState(new ApproachedState(port, vm.getRestorableState()));
+        addApproachedState(vm.getSearch(), port, vm.getRestorableState());
         PortCollector.addPort(port);
 
         // Reached the next accept() level, backtrack
         vm.getSearch().setIgnoredState(true);
       }
     }
+  }
+
+  private void addApproachedState(Search search, int port, RestorableVMState state) {
+    StateCollector.addApproachedState(new ApproachedState(search.getDepth() + 1, port, state));
   }
 
   @Override

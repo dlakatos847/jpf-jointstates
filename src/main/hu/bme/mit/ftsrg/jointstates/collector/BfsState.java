@@ -30,8 +30,8 @@ public class BfsState extends ApproachedState {
    * @param port
    * @param state
    */
-  private BfsState(int port, RestorableVMState state) {
-    super(port, state);
+  private BfsState(int depth, int port, RestorableVMState state) {
+    super(depth, port, state);
   }
 
   /**
@@ -39,8 +39,8 @@ public class BfsState extends ApproachedState {
    * @param state
    * @param message
    */
-  public BfsState(int port, RestorableVMState state, Object message) {
-    super(port, state);
+  public BfsState(int depth, int port, RestorableVMState state, Object message) {
+    super(depth, port, state);
     this.message = message;
   }
 

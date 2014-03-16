@@ -22,7 +22,9 @@ import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.search.DFSearch;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.VM;
+import hu.bme.mit.ftsrg.jointstates.collector.ApproachedState;
 import hu.bme.mit.ftsrg.jointstates.collector.BfsState;
+import hu.bme.mit.ftsrg.jointstates.collector.FakeServer;
 import hu.bme.mit.ftsrg.jointstates.collector.StateCollector;
 
 import java.util.logging.Logger;
@@ -43,9 +45,8 @@ public class JointstatesSearch extends Search {
    * @param config
    * @param vm
    */
-  protected JointstatesSearch(Config config, VM vm) {
+  public JointstatesSearch(Config config, VM vm) {
     super(config, vm);
-    this.dfs = new DFSearch(config, vm);
 
     // Decide whether it is client or server side
     String sideConfig = config.getString("jointstates.side");
@@ -73,28 +74,43 @@ public class JointstatesSearch extends Search {
    */
   @Override
   public void search() {
-    BfsState state = null;
+    BfsState bfsState = null;
+    this.depth = 0;
 
     notifySearchStarted();
 
     // add the root state to the queue as the first restorable state
-    StateCollector.addBfsState(new BfsState(0, this.vm.getRestorableState(), null));
-
-    this.depth = 0;
+    StateCollector.addBfsState(new BfsState(this.depth, 0, this.vm.getRestorableState(), null));
 
     // main BFS search loop
-    while ((state = StateCollector.getBfsState()) != null && !this.done) {
+    while ((bfsState = StateCollector.getBfsState()) != null && !this.done) {
       // load the next restorable state
-      this.vm.restoreState(state.getState());
+      this.vm.restoreState(bfsState.getState());
+      this.depth = bfsState.getDepth();
+
+      logger.info("jointstates search on depth " + this.depth);
 
       // explore the approachable states
+      this.dfs = new DFSearch(this.config, this.vm);
       this.dfs.search();
+
+      if (this.dfs.hasErrors()) {
+        terminate();
+      }
 
       if (JointstatesSearch.side == JointstatesSearch.clientSide) {
         // Get the message with a fake server on the client's connect port
+        ApproachedState approachedState;
+        while ((approachedState = StateCollector.getApproachedState()) != null) {
+          FakeServer fs = new FakeServer(approachedState.getPort());
 
+          // TODO connect the client to the fake server
+
+          // TODO return the message from the fake server
+
+        }
       } else {
-
+        // The client's messages should branch the server's state space
       }
     }
 

@@ -17,10 +17,25 @@
  */
 package hu.bme.mit.ftsrg.jointstates.collector;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
- *
+ * 
  */
 public class ClientMessageCollector {
+  protected static final Map<Integer, List<PortMessage>> messagesOnDepth = new HashMap<Integer, List<PortMessage>>();
 
+  public static List<Integer> getMessages(int depth, int port) {
+    List<Integer> result = new ArrayList<Integer>();
+    for (PortMessage pm : messagesOnDepth.get(depth)) {
+      if (pm.getPort() == port) {
+        result.add(pm.getMessage());
+      }
+    }
+    return result;
+  }
 }

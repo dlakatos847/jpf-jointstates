@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ServerSocket implements Closeable {
-
   private static int acceptDepth = 0;
 
   /**
@@ -69,7 +68,6 @@ public class ServerSocket implements Closeable {
     }
 
     s = new Socket();
-    System.out.println("Calling native_accept");
     native_accept(this.port, s.getSocketId());
     return s;
   }

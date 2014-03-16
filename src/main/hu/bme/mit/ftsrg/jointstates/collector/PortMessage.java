@@ -17,38 +17,30 @@
  */
 package hu.bme.mit.ftsrg.jointstates.collector;
 
-import gov.nasa.jpf.vm.RestorableVMState;
-
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class ApproachedState {
-  protected final int depth;
-  protected final int port;
-  protected final RestorableVMState state;
+public class PortMessage {
+  private final int port;
+  private final int message;
 
   /**
    * @param port
-   * @param state
+   * @param message
    */
-  public ApproachedState(int level, int port, RestorableVMState state) {
+  public PortMessage(int port, int message) {
     super();
-    this.depth = level;
     this.port = port;
-    this.state = state;
-  }
-
-  public int getDepth() {
-    return this.depth;
+    this.message = message;
   }
 
   public int getPort() {
     return this.port;
   }
 
-  public RestorableVMState getState() {
-    return this.state;
+  public int getMessage() {
+    return this.message;
   }
 
 }

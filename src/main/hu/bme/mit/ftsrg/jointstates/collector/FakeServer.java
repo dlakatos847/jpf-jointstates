@@ -15,10 +15,12 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates.command;
+package hu.bme.mit.ftsrg.jointstates.collector;
 
-import gov.nasa.jpf.Config;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -26,45 +28,42 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class CommandDelegator implements Runnable {
-  protected BlockingQueue<ProvidedData> providedData = new LinkedBlockingQueue<ProvidedData>();
-  protected BlockingQueue<Command> receivedCommands = new LinkedBlockingQueue<Command>();
-  protected int listenPort = -1;
-  protected Thread commandThread;
+public class FakeServer implements Runnable {
+  Thread thread;
+  int port = -1;
+  BlockingQueue<Integer> message = new LinkedBlockingQueue<Integer>();
 
-  /**
-   * 
-   */
-  public CommandDelegator(Config config) {
-    super();
-    this.listenPort = Integer.parseInt(config.getString("jointstates.side"));
-    this.commandThread = new Thread(this);
+  public FakeServer(int port) {
+    this.port = port;
+    this.thread = new Thread(this);
+    if (port != 0) {
+      this.thread.start();
+    }
   }
 
-  /*
-   * (non-Javadoc)
-   * @see java.lang.Runnable#run()
-   */
   @Override
   public void run() {
-    // ServerSocket ss = new ServerSocket(this.listenPort);
-    // Socket s;
-    // while (!Thread.interrupted()) {
+    try {
+      ServerSocket serverSocket = new ServerSocket(this.port);
+      Socket socket = serverSocket.accept();
+      InputStream is = socket.getInputStream();
+      Integer input = is.read();
+      this.message.put(input);
+      socket.close();
+      serverSocket.close();
+    } catch (IOException | InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public Integer getMessage() {
+    // TODO Integer returnValue = null;
     // try {
-    // s = ss.accept();
-    //
-    // } catch (SocketException se) {
-    //
+    // returnValue = this.message.take();
+    // } catch (InterruptedException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
     // }
-    // }
+    return 0;
   }
-
-  public void start() {
-    this.commandThread.start();
-  }
-
-  public void stop() {
-
-  }
-
 }

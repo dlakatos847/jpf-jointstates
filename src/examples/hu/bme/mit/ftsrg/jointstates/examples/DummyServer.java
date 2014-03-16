@@ -17,7 +17,6 @@ public class DummyServer implements Runnable {
     // System.out.println("THREAD ENTER " + this.port);
     try {
       ServerSocket serverSocket = new ServerSocket(this.port);
-      System.out.println("Calling serverSocket.accept()");
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
       int input = is.read();
@@ -40,14 +39,10 @@ public class DummyServer implements Runnable {
     // }
     // }
 
-    System.out.println("STARTED MAIN");
-
     for (String input : args) {
       int port = Integer.parseInt(input);
       Thread t = new Thread(new DummyServer(port));
       t.start();
     }
-
-    System.out.println("ENDED MAIN");
   }
 }
