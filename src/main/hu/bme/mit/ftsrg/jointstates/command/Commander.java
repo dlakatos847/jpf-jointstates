@@ -19,13 +19,14 @@ package hu.bme.mit.ftsrg.jointstates.command;
 
 import gov.nasa.jpf.Config;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
-import hu.bme.mit.ftsrg.jointstates.search.JointstatesSearch;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -33,30 +34,32 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class CommandDelegator implements Runnable {
-  private static CommandDelegator cd;
+public class Commander implements Runnable {
+  private static Commander cmd;
 
   private Thread cmdThread;
-  protected BlockingQueue<Command> receivedCommands = new LinkedBlockingQueue<Command>();
-  protected BlockingQueue<ProvidedData> providedReplies = new LinkedBlockingQueue<ProvidedData>();
-  protected int listenPort;
+  protected Map<Side, Integer> sidePorts = new HashMap<Side, Integer>();
+  public BlockingQueue<Command> commands = new LinkedBlockingQueue<Command>();
+  public BlockingQueue<ProvidedData> replies = new LinkedBlockingQueue<ProvidedData>();
 
-  /**
-   * 
-   */
-  public CommandDelegator(Config config) {
-    super();
-    if (JointstatesSearch.side == Side.CLIENT) {
-      this.listenPort = Integer.parseInt(config.getString("jointstates.command.clientport"));
-    } else if (JointstatesSearch.side == Side.SERVER) {
-      this.listenPort = Integer.parseInt(config.getString("jointstates.command.serverport"));
-    }
+  public Commander(Config config) {
+    this.sidePorts.put(Side.CLIENT, config.getInt("jointstates.command.clientport", 62301));
+    this.sidePorts.put(Side.SERVER, config.getInt("jointstates.command.serverport", 62302));
     this.cmdThread = new Thread(this);
     this.cmdThread.start();
   }
 
   public static void initialize(Config config) {
-    cd = new CommandDelegator(config);
+    cmd = new Commander(config);
+  }
+
+  public static void terminate() {
+    cmd.cmdThread.interrupt();
+  }
+
+  public static ProvidedData issueCommand(Command command) throws InterruptedException {
+    cmd.commands.add(command);
+    return cmd.replies.take();
   }
 
   /*
@@ -65,33 +68,21 @@ public class CommandDelegator implements Runnable {
    */
   @Override
   public void run() {
-    ServerSocket ss;
-    Socket s;
-    ObjectInputStream ois;
-    ObjectOutputStream oos;
     try {
-      ss = new ServerSocket(this.listenPort);
       while (!Thread.interrupted()) {
-        s = ss.accept();
-        ois = new ObjectInputStream(s.getInputStream());
-        this.receivedCommands.add((Command) ois.readObject());
-        oos = new ObjectOutputStream(s.getOutputStream());
-        oos.writeObject(this.providedReplies.take());
-        oos.close();
-        ois.close();
-        s.close();
+        Command command = this.commands.take();
+        ProvidedData response;
+        Socket s = new Socket(InetAddress.getByName("localhost"), this.sidePorts.get(command.getReceiver()));
+        ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+        ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+        oos.writeObject(command);
+        response = (ProvidedData) ois.readObject();
+        this.replies.add(response);
       }
-      ss.close();
-    } catch (ClassNotFoundException | IOException | InterruptedException e) {
+    } catch (IOException | ClassNotFoundException e) {
       e.printStackTrace();
+    } catch (InterruptedException f) {
+      // it's normal
     }
-  }
-
-  public static Command nextCommand() throws InterruptedException {
-    return cd.receivedCommands.take();
-  }
-
-  public static void provideReply(ProvidedData data) {
-    cd.providedReplies.add(data);
   }
 }

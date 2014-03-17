@@ -30,6 +30,7 @@ import hu.bme.mit.ftsrg.jointstates.collector.ApproachedState;
 import hu.bme.mit.ftsrg.jointstates.collector.PortCollector;
 import hu.bme.mit.ftsrg.jointstates.collector.StateCollector;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
+import hu.bme.mit.ftsrg.jointstates.core.Side;
 import hu.bme.mit.ftsrg.jointstates.search.JointstatesSearch;
 
 import java.io.IOException;
@@ -73,7 +74,7 @@ public class JointstatesListener extends ListenerAdapter {
     ElementInfo elementInfo;
     int port;
 
-    if (JointstatesSearch.side == JointstatesSearch.clientSide) {
+    if (JointstatesSearch.side == Side.CLIENT) {
       // Socket.connect()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.connectFlag)) {
         ii = (InstanceInvocation) instructionToExecute;
@@ -92,7 +93,7 @@ public class JointstatesListener extends ListenerAdapter {
       }
     }
 
-    if (JointstatesSearch.side == JointstatesSearch.serverSide) {
+    if (JointstatesSearch.side == Side.SERVER) {
       // ServerSocket.accept()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.acceptFlag)) {
         ii = (InstanceInvocation) instructionToExecute;
@@ -123,11 +124,11 @@ public class JointstatesListener extends ListenerAdapter {
     Iterator<Integer> iter;
     for (int i = 1; i <= search.getDepth(); ++i) {
       iter = portsByDepth.get(i).iterator();
-      if (JointstatesSearch.side == JointstatesSearch.clientSide) {
+      if (JointstatesSearch.side == Side.CLIENT) {
         while (iter.hasNext()) {
           logger.info("depth: " + search.getDepth() + ", connect port: " + iter.next());
         }
-      } else {
+      } else if (JointstatesSearch.side == Side.SERVER) {
         while (iter.hasNext()) {
           logger.info("depth: " + search.getDepth() + ", accept port: " + iter.next());
         }

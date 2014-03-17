@@ -15,20 +15,12 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates;
-
-import gov.nasa.jpf.Config;
-import hu.bme.mit.ftsrg.jointstates.command.Commander;
+package hu.bme.mit.ftsrg.jointstates.core;
 
 /**
- * @author David Lakatos <david.lakatos.hu@gmail.com> This is the Master-JPF,
- *         controls the joint m
+ * @author David Lakatos <david.lakatos.hu@gmail.com>
+ * 
  */
-public class Jointstates {
-  public static void main(String[] args) {
-    Config config = new Config("jpf.properties");
-    Commander.initialize(config);
-
-    Commander.terminate();
-  }
+public enum Side {
+  CLIENT, SERVER
 }

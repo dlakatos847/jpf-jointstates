@@ -17,24 +17,26 @@
  */
 package hu.bme.mit.ftsrg.jointstates;
 
+import gov.nasa.jpf.JPF;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
+import java.util.logging.Logger;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
 public class HeartbeatResponder extends Thread {
-  // private static Logger logger =
-  // JPF.getLogger(HeartbeatResponder.class.getName());
+  private static Logger logger = JPF.getLogger(HeartbeatResponder.class.getName());
 
   private final int port;
   private final int expectedInput = 99;
   private final int output = 100;
-  private boolean running = true;
   ServerSocket serverSocket;
 
   public HeartbeatResponder(int port) {
@@ -46,26 +48,24 @@ public class HeartbeatResponder extends Thread {
   public void run() {
     try {
       this.serverSocket = new ServerSocket(this.port);
-      while (this.running) {
-        Socket socket = this.serverSocket.accept();
-        InputStream is = socket.getInputStream();
-        OutputStream os = socket.getOutputStream();
-        int input = is.read();
-        System.out.println("HEARTBEAT REQUEST RECEIVED: " + input);
-        if (input == this.expectedInput) {
-          os.write(this.output);
-        }
-        socket.close();
+      Socket s = this.serverSocket.accept();
+      InputStream is = s.getInputStream();
+      OutputStream os = s.getOutputStream();
+      int input = is.read();
+      if (input == this.expectedInput) {
+        logger.info("jointstates heartbeat OK");
+        os.write(this.output);
+      } else {
+        logger.severe("jointstates wrong heartbeat input received: " + input);
+        os.write(-1);
       }
-    } catch (IOException e) {
-      e.printStackTrace();
+      is.close();
+      os.close();
+      s.close();
+    } catch (SocketException e) {
+      // it's normal
+    } catch (IOException f) {
+      logger.severe(f.getMessage());
     }
-  }
-
-  @Override
-  protected void finalize() throws Throwable {
-    this.serverSocket.close();
-    this.running = false;
-    super.finalize();
   }
 }

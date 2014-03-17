@@ -17,6 +17,8 @@
  */
 package hu.bme.mit.ftsrg.jointstates.command;
 
+import hu.bme.mit.ftsrg.jointstates.core.Side;
+
 import java.io.Serializable;
 
 /**
@@ -25,6 +27,7 @@ import java.io.Serializable;
  */
 public class Command implements Serializable {
   private static final long serialVersionUID = -3912483750386002090L;
+  private Side receiver;
   private CommandType type;
   private int port;
   private Object message;
@@ -34,11 +37,16 @@ public class Command implements Serializable {
    * @param port
    * @param message
    */
-  public Command(CommandType type, int port, Object message) {
+  public Command(Side receiver, CommandType type, int port, Object message) {
     super();
+    this.receiver = receiver;
     this.type = type;
     this.port = port;
     this.message = message;
+  }
+
+  public Side getReceiver() {
+    return this.receiver;
   }
 
   public CommandType getType() {

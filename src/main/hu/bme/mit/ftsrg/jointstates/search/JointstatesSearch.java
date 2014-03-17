@@ -28,6 +28,9 @@ import hu.bme.mit.ftsrg.jointstates.collector.FakeServer;
 import hu.bme.mit.ftsrg.jointstates.collector.StateCollector;
 import hu.bme.mit.ftsrg.jointstates.command.Command;
 import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
+import hu.bme.mit.ftsrg.jointstates.command.ProvidedData;
+import hu.bme.mit.ftsrg.jointstates.command.ProvidedDataType;
+import hu.bme.mit.ftsrg.jointstates.core.Side;
 
 import java.util.logging.Logger;
 
@@ -37,9 +40,7 @@ import java.util.logging.Logger;
  */
 public class JointstatesSearch extends Search {
   protected static final Logger logger = JPF.getLogger(JointstatesSearch.class.getCanonicalName());
-  public static final Object clientSide = new Object();
-  public static final Object serverSide = new Object();
-  public static Object side = null;
+  public static Side side;
 
   protected DFSearch dfs;
 
@@ -54,9 +55,9 @@ public class JointstatesSearch extends Search {
     String sideConfig = config.getString("jointstates.side");
     if (sideConfig != null) {
       if (sideConfig.equals("client")) {
-        JointstatesSearch.side = JointstatesSearch.clientSide;
+        JointstatesSearch.side = Side.CLIENT;
       } else if (sideConfig.equals("server")) {
-        JointstatesSearch.side = JointstatesSearch.serverSide;
+        JointstatesSearch.side = Side.SERVER;
       } else {
         logger.severe("jointstates.side parameter has invalid value. Allowed values are: [client, server]");
         terminate();
@@ -80,7 +81,7 @@ public class JointstatesSearch extends Search {
     Command currentCommand;
 
     this.dfs = new DFSearch(this.config, this.vm);
-    CommandDelegator.initCommandDelegator(this.config);
+    CommandDelegator.initialize(this.config);
 
     this.depth = 0;
 
@@ -89,56 +90,64 @@ public class JointstatesSearch extends Search {
     // add the root state to the queue as the first restorable state
     StateCollector.addBfsState(new BfsState(this.depth, 0, this.vm.getRestorableState(), null));
 
-    // main BFS search loop
-    while ((bfsState = StateCollector.getBfsState()) != null && !this.done) {
-      // we wait for the next command
-      currentCommand = CommandDelegator.nextCommand();
+    try {
+      // main BFS search loop
+      while (!this.done) {
+        // we wait for the next command
+        currentCommand = CommandDelegator.nextCommand();
 
-      switch (currentCommand.getType()) {
-      // expore new approachable states
-      case EXPLORE:
-        // load the next restorable state
-        this.vm.restoreState(bfsState.getState());
+        switch (currentCommand.getType()) {
+        // expore new approachable states
+        case EXPLORE:
+          // load the next restorable state
+          bfsState = StateCollector.getBfsState();
+          this.vm.restoreState(bfsState.getState());
 
-        if (this.depth != bfsState.getDepth()) {
-          logger.info("jointstates bfs search goes from depth " + this.depth + " to " + bfsState.getDepth());
-          this.depth = bfsState.getDepth();
+          if (this.depth != bfsState.getDepth()) {
+            logger.info("jointstates bfs search goes from depth " + this.depth + " to " + bfsState.getDepth());
+            this.depth = bfsState.getDepth();
+          }
+
+          logger.info("jointstates bfs search is on depth " + this.depth);
+
+          // explore the approachable states
+          // this.dfs = new DFSearch(this.config, this.vm);
+          this.dfs.search();
+
+          if (this.dfs.hasErrors()) {
+            terminate();
+          }
+
+          CommandDelegator.provideReply(new ProvidedData(0, null, ProvidedDataType.OK));
+
+          break;
+
+        case STOP:
+          this.done = true;
+          break;
         }
 
-        logger.info("jointstates bfs search is on depth " + this.depth);
+        // Data choice generation
 
-        // explore the approachable states
-        // this.dfs = new DFSearch(this.config, this.vm);
-        this.dfs.search();
-
-        if (this.dfs.hasErrors()) {
-          terminate();
+        if (JointstatesSearch.side == Side.CLIENT) {
+          // Get the message with a fake server on the client's connect port
+          ApproachedState approachedState;
+          while ((approachedState = StateCollector.getApproachedState()) != null) {
+            FakeServer fs = new FakeServer(approachedState.getPort());
+            // TODO connect the client to the fake server
+            // TODO return the message from the fake server
+          }
+        } else { // The client's messages should branch the server's state space
+          ApproachedState approachedState;
+          while ((approachedState = StateCollector.getApproachedState()) != null) {
+            StateCollector.addBfsState(new BfsState(approachedState.getDepth(), approachedState.getPort(), approachedState.getState(), null));
+          }
         }
 
-        break;
-
-      case STOP:
-        this.done = true;
-        break;
       }
-
-      // Data choice generation
-
-      if (JointstatesSearch.side == JointstatesSearch.clientSide) {
-        // Get the message with a fake server on the client's connect port
-        ApproachedState approachedState;
-        while ((approachedState = StateCollector.getApproachedState()) != null) {
-          FakeServer fs = new FakeServer(approachedState.getPort());
-          // TODO connect the client to the fake server
-          // TODO return the message from the fake server
-        }
-      } else { // The client's messages should branch the server's state space
-        ApproachedState approachedState;
-        while ((approachedState = StateCollector.getApproachedState()) != null) {
-          StateCollector.addBfsState(new BfsState(approachedState.getDepth(), approachedState.getPort(), approachedState.getState(), null));
-        }
-      }
-
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      terminate();
     }
 
     notifySearchFinished();

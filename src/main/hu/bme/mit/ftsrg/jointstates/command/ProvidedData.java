@@ -26,15 +26,17 @@ import java.util.List;
 public class ProvidedData {
   private int depth;
   private List<Integer> ports;
+  private ProvidedDataType type;
 
   /**
    * @param depth
    * @param ports
    */
-  public ProvidedData(int depth, List<Integer> ports) {
+  public ProvidedData(int depth, List<Integer> ports, ProvidedDataType type) {
     super();
     this.depth = depth;
     this.ports = ports;
+    this.type = type;
   }
 
   public int getDepth() {
@@ -43,6 +45,10 @@ public class ProvidedData {
 
   public List<Integer> getPorts() {
     return this.ports;
+  }
+
+  public ProvidedDataType getType() {
+    return this.type;
   }
 
 }
