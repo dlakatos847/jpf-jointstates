@@ -103,7 +103,6 @@ public class JointstatesListener extends ListenerAdapter {
 
         // Save current state to continue model checking from this point later
         vm.breakTransition("accept on port");
-        RestorableVMState state;
         addApproachedState(vm.getSearch(), port, vm.getRestorableState());
         PortCollector.addPort(vm.getSearch().getDepth(), port);
 
