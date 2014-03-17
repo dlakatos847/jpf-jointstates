@@ -18,9 +18,11 @@
 package hu.bme.mit.ftsrg.jointstates;
 
 /**
- * @author David Lakatos <david.lakatos.hu@gmail.com>
- * 
+ * @author David Lakatos <david.lakatos.hu@gmail.com> This is the Master-JPF,
+ *         controls the joint m
  */
 public class Jointstates {
+  public static void main(String[] args) {
 
+  }
 }

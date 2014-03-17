@@ -28,21 +28,19 @@ import java.util.Set;
  */
 public class PortCollector {
   private static int currentLevel = 0;
-  protected static final Map<Integer, Set<Integer>> portsByLevels = new HashMap<Integer, Set<Integer>>();
+
+  // level -> ports
+  protected static final Map<Integer, Set<Integer>> portsByDepth = new HashMap<Integer, Set<Integer>>();
 
   static {
     nextLevel();
   }
 
-  public static boolean addPort(int port) {
-    if (!portsByLevels.containsKey(currentLevel)) {
-      portsByLevels.put(currentLevel, new HashSet<Integer>());
+  public static boolean addPort(int depth, int port) {
+    if (!portsByDepth.containsKey(currentLevel)) {
+      portsByDepth.put(currentLevel, new HashSet<Integer>());
     }
-    return portsByLevels.get(currentLevel).add(port);
-  }
-
-  public static Set<Integer> getPorts() {
-    return portsByLevels.get(currentLevel);
+    return portsByDepth.get(currentLevel).add(port);
   }
 
   public static int getCurrentLevel() {
@@ -51,6 +49,11 @@ public class PortCollector {
 
   public static void nextLevel() {
     currentLevel++;
-    portsByLevels.put(currentLevel, new HashSet<Integer>());
+    portsByDepth.put(currentLevel, new HashSet<Integer>());
   }
+
+  public static Map<Integer, Set<Integer>> getPortsByDepth() {
+    return portsByDepth;
+  }
+
 }

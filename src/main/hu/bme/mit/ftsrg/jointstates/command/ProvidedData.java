@@ -17,10 +17,32 @@
  */
 package hu.bme.mit.ftsrg.jointstates.command;
 
+import java.util.List;
+
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
- *
+ * 
  */
 public class ProvidedData {
+  private int depth;
+  private List<Integer> ports;
+
+  /**
+   * @param depth
+   * @param ports
+   */
+  public ProvidedData(int depth, List<Integer> ports) {
+    super();
+    this.depth = depth;
+    this.ports = ports;
+  }
+
+  public int getDepth() {
+    return this.depth;
+  }
+
+  public List<Integer> getPorts() {
+    return this.ports;
+  }
 
 }

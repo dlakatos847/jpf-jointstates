@@ -22,5 +22,5 @@ package hu.bme.mit.ftsrg.jointstates.command;
  * 
  */
 public enum CommandType {
-
+  EXPLORE, STOP
 }

@@ -36,6 +36,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -80,8 +83,9 @@ public class JointstatesListener extends ListenerAdapter {
         logger.info("connect to port " + port);
 
         // Save current state to continue model checking from this point later
+        vm.breakTransition("connect to port");
         addApproachedState(vm.getSearch(), port, vm.getRestorableState());
-        PortCollector.addPort(port);
+        PortCollector.addPort(vm.getSearch().getDepth(), port);
 
         // Reached the next connect() level, backtrack
         vm.getSearch().setIgnoredState(true);
@@ -98,8 +102,10 @@ public class JointstatesListener extends ListenerAdapter {
         logger.info("accept on port " + port);
 
         // Save current state to continue model checking from this point later
+        vm.breakTransition("accept on port");
+        RestorableVMState state;
         addApproachedState(vm.getSearch(), port, vm.getRestorableState());
-        PortCollector.addPort(port);
+        PortCollector.addPort(vm.getSearch().getDepth(), port);
 
         // Reached the next accept() level, backtrack
         vm.getSearch().setIgnoredState(true);
@@ -114,19 +120,22 @@ public class JointstatesListener extends ListenerAdapter {
   @Override
   public void searchFinished(Search search) {
     super.searchFinished(search);
-    if (JointstatesSearch.side == JointstatesSearch.clientSide) {
-      logger.info("Restorable client states: " + StateCollector.getBfsStateCount());
-      for (int i : PortCollector.getPorts()) {
-        logger.info("connect port: " + i);
+    Map<Integer, Set<Integer>> portsByDepth = PortCollector.getPortsByDepth();
+    Iterator<Integer> iter;
+    for (int i = 1; i <= search.getDepth(); ++i) {
+      iter = portsByDepth.get(i).iterator();
+      if (JointstatesSearch.side == JointstatesSearch.clientSide) {
+        while (iter.hasNext()) {
+          logger.info("depth: " + search.getDepth() + ", connect port: " + iter.next());
+        }
+      } else {
+        while (iter.hasNext()) {
+          logger.info("depth: " + search.getDepth() + ", accept port: " + iter.next());
+        }
       }
-    } else {
-      logger.info("restorable server states: " + StateCollector.getBfsStateCount());
-      for (int i : PortCollector.getPorts()) {
-        logger.info("accept port: " + i);
-      }
-    }
 
-    // search.getVM().restoreState(StateCollector.getServerState());
+      // search.getVM().restoreState(StateCollector.getServerState());
+    }
   }
 
   public void sendHeartbeatRequest() {

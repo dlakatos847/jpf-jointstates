@@ -18,7 +18,12 @@
 package hu.bme.mit.ftsrg.jointstates.command;
 
 import gov.nasa.jpf.Config;
+import hu.bme.mit.ftsrg.jointstates.search.JointstatesSearch;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,6 +32,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * 
  */
 public class CommandDelegator implements Runnable {
+  // private static CommandDelegator cd;
+
   protected BlockingQueue<ProvidedData> providedData = new LinkedBlockingQueue<ProvidedData>();
   protected BlockingQueue<Command> receivedCommands = new LinkedBlockingQueue<Command>();
   protected int listenPort = -1;
@@ -37,8 +44,16 @@ public class CommandDelegator implements Runnable {
    */
   public CommandDelegator(Config config) {
     super();
-    this.listenPort = Integer.parseInt(config.getString("jointstates.side"));
+    if (JointstatesSearch.side == JointstatesSearch.clientSide) {
+      this.listenPort = Integer.parseInt(config.getString("jointstates.command.clientport"));
+    } else if (JointstatesSearch.side == JointstatesSearch.serverSide) {
+      this.listenPort = Integer.parseInt(config.getString("jointstates.command.serverport"));
+    }
     this.commandThread = new Thread(this);
+  }
+
+  public static void initCommandDelegator(Config config) {
+    // cd = new CommandDelegator(config);
   }
 
   /*
@@ -47,16 +62,22 @@ public class CommandDelegator implements Runnable {
    */
   @Override
   public void run() {
-    // ServerSocket ss = new ServerSocket(this.listenPort);
-    // Socket s;
-    // while (!Thread.interrupted()) {
-    // try {
-    // s = ss.accept();
-    //
-    // } catch (SocketException se) {
-    //
-    // }
-    // }
+    ServerSocket ss;
+    Socket s;
+    ObjectInputStream ois;
+    try {
+      ss = new ServerSocket(this.listenPort);
+      while (!Thread.interrupted()) {
+        s = ss.accept();
+        ois = (ObjectInputStream) s.getInputStream();
+        this.receivedCommands.add((Command) ois.readObject());
+        ois.close();
+        s.close();
+      }
+      ss.close();
+    } catch (ClassNotFoundException | IOException e) {
+      e.printStackTrace();
+    }
   }
 
   public void start() {
@@ -67,4 +88,15 @@ public class CommandDelegator implements Runnable {
 
   }
 
+  // TODO delete dummy return and uncomment the area below
+  // TODO a nicer exception handling solution would be great
+  public static Command nextCommand() {
+    return new Command(CommandType.EXPLORE, 0, null);
+
+    /*
+     * Command nextCommand = null; while (nextCommand == null) { try {
+     * nextCommand = cd.receivedCommands.take(); } catch (InterruptedException
+     * e) { e.printStackTrace(); } } return nextCommand;
+     */
+  }
 }
