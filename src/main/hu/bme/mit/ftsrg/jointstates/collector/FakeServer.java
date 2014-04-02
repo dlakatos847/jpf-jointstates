@@ -28,31 +28,35 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class FakeServer implements Runnable {
-  Thread thread;
+public class FakeServer extends Thread {
+  public static BlockingQueue<Integer> message = new LinkedBlockingQueue<Integer>();
+
+  static {
+    new FakeServer(8080);
+  }
+
   int port = -1;
-  BlockingQueue<Integer> message = new LinkedBlockingQueue<Integer>();
 
   public FakeServer(int port) {
+    setDaemon(true);
     this.port = port;
-    this.thread = new Thread(this);
-    if (port != 0) {
-      this.thread.start();
-    }
+    start();
   }
 
   @Override
   public void run() {
-    try {
-      ServerSocket serverSocket = new ServerSocket(this.port);
-      Socket socket = serverSocket.accept();
-      InputStream is = socket.getInputStream();
-      Integer input = is.read();
-      this.message.put(input);
-      socket.close();
-      serverSocket.close();
-    } catch (IOException | InterruptedException e) {
-      e.printStackTrace();
+    while (!Thread.interrupted()) {
+      try {
+        ServerSocket serverSocket = new ServerSocket(this.port);
+        Socket socket = serverSocket.accept();
+        InputStream is = socket.getInputStream();
+        Integer input = is.read();
+        message.put(input);
+        socket.close();
+        serverSocket.close();
+      } catch (IOException | InterruptedException e) {
+        e.printStackTrace();
+      }
     }
   }
 

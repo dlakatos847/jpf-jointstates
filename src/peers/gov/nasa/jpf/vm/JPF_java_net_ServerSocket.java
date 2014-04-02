@@ -13,11 +13,7 @@ import java.util.logging.Logger;
 
 public class JPF_java_net_ServerSocket extends NativePeer {
   private static Logger log = JPF.getLogger(JPF_java_net_ServerSocket.class.getCanonicalName());
-  private static Map<Integer, ServerSocket> serverSocketPorts;
-
-  static {
-    serverSocketPorts = new Hashtable<Integer, ServerSocket>();
-  }
+  private static Map<Integer, ServerSocket> serverSocketPorts = new Hashtable<Integer, ServerSocket>();;
 
   @MJI
   public int native_accept__II__I(MJIEnv env, int objRef, int v0, int v1) throws IOException {
@@ -29,8 +25,9 @@ public class JPF_java_net_ServerSocket extends NativePeer {
 
     s = ss.accept();
 
-    // TODO @David Lakatos: i don't like this
+    // FIXME @David Lakatos: i don't like this
     JPF_java_net_Socket.socketMapping.put(v1, s);
+
     return 0;
   }
 
@@ -40,5 +37,4 @@ public class JPF_java_net_ServerSocket extends NativePeer {
       serverSocketPorts.put(v0, new ServerSocket(v0));
     }
   }
-
 }

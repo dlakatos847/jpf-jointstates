@@ -17,6 +17,7 @@
  */
 package hu.bme.mit.ftsrg.jointstates.listener;
 
+import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.ListenerAdapter;
 import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
@@ -31,15 +32,11 @@ import hu.bme.mit.ftsrg.jointstates.collector.PortCollector;
 import hu.bme.mit.ftsrg.jointstates.collector.StateCollector;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
-import hu.bme.mit.ftsrg.jointstates.search.JointstatesSearch;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -48,6 +45,7 @@ import java.util.logging.Logger;
  */
 public class JointstatesListener extends ListenerAdapter {
   protected static final Logger logger = JPF.getLogger(JointstatesListener.class.getCanonicalName());
+  public static Side side;
 
   /*
    * Make sure jpf-jointstates master-JPF is available (non-Javadoc)
@@ -57,7 +55,45 @@ public class JointstatesListener extends ListenerAdapter {
   public void searchStarted(Search search) {
     super.searchStarted(search);
 
+    Config config = search.getVM().getConfig();
+    // Decide whether it is client or server side
+    String sideConfig = config.getString("jointstates.side");
+    if (sideConfig != null) {
+      if (sideConfig.equals("client")) {
+        JointstatesListener.side = Side.CLIENT;
+      } else if (sideConfig.equals("server")) {
+        JointstatesListener.side = Side.SERVER;
+      } else {
+        logger.severe("jointstates.side parameter has invalid value. Allowed values are: [client, server]");
+        search.terminate();
+      }
+    } else {
+      logger.severe("jointstates.side parameter is missing. Allowed values are: [client, server]");
+      search.terminate();
+    }
+
     // sendHeartbeatRequest();
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see gov.nasa.jpf.ListenerAdapter#stateAdvanced(gov.nasa.jpf.search.Search)
+   */
+  @Override
+  public void stateAdvanced(Search search) {
+    super.stateAdvanced(search);
+    logger.info("jointstates advanced to depth " + search.getDepth());
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * gov.nasa.jpf.ListenerAdapter#stateBacktracked(gov.nasa.jpf.search.Search)
+   */
+  @Override
+  public void stateBacktracked(Search search) {
+    super.stateBacktracked(search);
+    logger.info("jointstates backtracked to depth " + search.getDepth());
   }
 
   /*
@@ -73,9 +109,8 @@ public class JointstatesListener extends ListenerAdapter {
     int callerRef;
     ElementInfo elementInfo;
     int port;
-
-    if (JointstatesSearch.side == Side.CLIENT) {
-      // Socket.connect()
+    if (JointstatesListener.side == Side.CLIENT) {
+      // Before Socket.connect()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.connectFlag)) {
         ii = (InstanceInvocation) instructionToExecute;
         callerRef = ii.getCalleeThis(currentThread);
@@ -84,16 +119,14 @@ public class JointstatesListener extends ListenerAdapter {
         logger.info("connect to port " + port);
 
         // Save current state to continue model checking from this point later
-        vm.breakTransition("connect to port");
-        addApproachedState(vm.getSearch(), port, vm.getRestorableState());
         PortCollector.addPort(vm.getSearch().getDepth(), port);
 
         // Reached the next connect() level, backtrack
-        vm.getSearch().setIgnoredState(true);
+        // vm.getSearch().setIgnoredState(true);
       }
     }
 
-    if (JointstatesSearch.side == Side.SERVER) {
+    if (JointstatesListener.side == Side.SERVER) {
       // ServerSocket.accept()
       if ((instructionToExecute instanceof InstanceInvocation) && (instructionToExecute.getAttr() == JointstatesInstructionFactory.acceptFlag)) {
         ii = (InstanceInvocation) instructionToExecute;
@@ -102,41 +135,63 @@ public class JointstatesListener extends ListenerAdapter {
         port = elementInfo.getIntField("port");
         logger.info("accept on port " + port);
 
+        //@formatter:off
         // Save current state to continue model checking from this point later
-        vm.breakTransition("accept on port");
-        addApproachedState(vm.getSearch(), port, vm.getRestorableState());
-        PortCollector.addPort(vm.getSearch().getDepth(), port);
+//        PortCollector.addPort(vm.getSearch().getDepth(), port);
+//        vm.breakTransition("because");
+//        addApproachedState(vm.getSearch(), port, vm.getRestorableState());
 
         // Reached the next accept() level, backtrack
-        vm.getSearch().setIgnoredState(true);
+//        currentThread.skipInstruction(new NOP());
+        //@formatter:on
+      }
+    }
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see gov.nasa.jpf.ListenerAdapter#instructionExecuted(gov.nasa.jpf.vm.VM,
+   * gov.nasa.jpf.vm.ThreadInfo, gov.nasa.jpf.vm.Instruction,
+   * gov.nasa.jpf.vm.Instruction)
+   */
+  @Override
+  public void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction nextInstruction, Instruction executedInstruction) {
+    super.instructionExecuted(vm, currentThread, nextInstruction, executedInstruction);
+
+    if (JointstatesListener.side == Side.CLIENT) {
+      // After Socket.connect()
+      if ((executedInstruction instanceof InstanceInvocation) && (executedInstruction.getAttr() == JointstatesInstructionFactory.connectFlag)) {
+
       }
     }
   }
 
   private void addApproachedState(Search search, int port, RestorableVMState state) {
-    StateCollector.addApproachedState(new ApproachedState(search.getDepth() + 1, port, state));
+    StateCollector.addApproachedState(new ApproachedState(search.getDepth(), port, state));
   }
 
-  @Override
-  public void searchFinished(Search search) {
-    super.searchFinished(search);
-    Map<Integer, Set<Integer>> portsByDepth = PortCollector.getPortsByDepth();
-    Iterator<Integer> iter;
-    for (int i = 1; i <= search.getDepth(); ++i) {
-      iter = portsByDepth.get(i).iterator();
-      if (JointstatesSearch.side == Side.CLIENT) {
-        while (iter.hasNext()) {
-          logger.info("depth: " + search.getDepth() + ", connect port: " + iter.next());
-        }
-      } else if (JointstatesSearch.side == Side.SERVER) {
-        while (iter.hasNext()) {
-          logger.info("depth: " + search.getDepth() + ", accept port: " + iter.next());
-        }
-      }
-
-      // search.getVM().restoreState(StateCollector.getServerState());
-    }
-  }
+  // @formatter:off
+//  @Override
+//  public void searchFinished(Search search) {
+//    super.searchFinished(search);
+//    Map<Integer, Set<Integer>> portsByDepth = PortCollector.getPortsByDepth();
+//    Iterator<Integer> iter;
+//    for (int i = 1; i <= search.getDepth(); ++i) {
+//      iter = portsByDepth.get(i).iterator();
+//      if (JointstatesSearch.side == Side.CLIENT) {
+//        while (iter.hasNext()) {
+//          logger.info("depth: " + search.getDepth() + ", connect port: " + iter.next());
+//        }
+//      } else if (JointstatesSearch.side == Side.SERVER) {
+//        while (iter.hasNext()) {
+//          logger.info("depth: " + search.getDepth() + ", accept port: " + iter.next());
+//        }
+//      }
+//
+//      // search.getVM().restoreState(StateCollector.getServerState());
+//    }
+//  }
+  // @formatter:on
 
   public void sendHeartbeatRequest() {
     String hostName = "127.0.0.1";

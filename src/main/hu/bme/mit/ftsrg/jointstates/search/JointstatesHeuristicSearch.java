@@ -1,0 +1,57 @@
+/* Copyright (C) 2007 United States Government as represented by the
+ * Administrator of the National Aeronautics and Space Administration
+ * (NASA).  All Rights Reserved.
+ *
+ * This software is distributed under the NASA Open Source Agreement
+ * (NOSA), version 1.3.  The NOSA has been approved by the Open Source
+ * Initiative.  See the file NOSA-1.3-JPF at the top of the distribution
+ * directory tree for the complete NOSA document.
+ *
+ * THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF ANY
+ * KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+ * LIMITED TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO
+ * SPECIFICATIONS, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+ * A PARTICULAR PURPOSE, OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT
+ * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
+ * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
+ */
+package hu.bme.mit.ftsrg.jointstates.search;
+
+import gov.nasa.jpf.Config;
+import gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic;
+import gov.nasa.jpf.vm.VM;
+import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
+
+/**
+ * @author David Lakatos <david.lakatos.hu@gmail.com>
+ * 
+ */
+public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
+
+  private final int SEARCH_INDEX_OFFSET = 100;
+  private int jointStatesDepth = 0;
+
+  /**
+   * @param config
+   * @param vm
+   */
+  public JointstatesHeuristicSearch(Config config, VM vm) {
+    super(config, vm);
+    // TODO Auto-generated constructor stub
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic#computeHeuristicValue
+   * ()
+   */
+  @Override
+  protected int computeHeuristicValue() {
+    if (this.vm.getCurrentTransition().getThreadInfo().getPC().getAttr() == JointstatesInstructionFactory.connectFlag
+        || this.vm.getCurrentTransition().getThreadInfo().getPC().getAttr() == JointstatesInstructionFactory.acceptFlag) {
+      return Integer.MAX_VALUE - this.SEARCH_INDEX_OFFSET + this.jointStatesDepth;
+    }
+    return Integer.MAX_VALUE - this.SEARCH_INDEX_OFFSET - this.vm.getPathLength();
+  }
+}

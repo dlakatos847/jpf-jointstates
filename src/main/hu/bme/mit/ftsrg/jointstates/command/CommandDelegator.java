@@ -19,7 +19,6 @@ package hu.bme.mit.ftsrg.jointstates.command;
 
 import gov.nasa.jpf.Config;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
-import hu.bme.mit.ftsrg.jointstates.search.JointstatesSearch;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -46,17 +45,23 @@ public class CommandDelegator implements Runnable {
    */
   public CommandDelegator(Config config) {
     super();
-    if (JointstatesSearch.side == Side.CLIENT) {
-      this.listenPort = Integer.parseInt(config.getString("jointstates.command.clientport"));
-    } else if (JointstatesSearch.side == Side.SERVER) {
-      this.listenPort = Integer.parseInt(config.getString("jointstates.command.serverport"));
-    }
+//    @formatter:off
+//    if (JointstatesSearch.side == Side.CLIENT) {
+//      this.listenPort = Integer.parseInt(config.getString("jointstates.command.clientport"));
+//    } else if (JointstatesSearch.side == Side.SERVER) {
+//      this.listenPort = Integer.parseInt(config.getString("jointstates.command.serverport"));
+//    }
+//    @formatter:on
     this.cmdThread = new Thread(this);
-    this.cmdThread.start();
+    // this.cmdThread.start();
   }
 
   public static void initialize(Config config) {
     cd = new CommandDelegator(config);
+  }
+
+  public static void stop() {
+    cd.cmdThread.interrupt();
   }
 
   /*
@@ -88,7 +93,8 @@ public class CommandDelegator implements Runnable {
   }
 
   public static Command nextCommand() throws InterruptedException {
-    return cd.receivedCommands.take();
+    return new Command(Side.CLIENT, CommandType.EXPLORE, 0, null);
+    // return cd.receivedCommands.take();
   }
 
   public static void provideReply(ProvidedData data) {
