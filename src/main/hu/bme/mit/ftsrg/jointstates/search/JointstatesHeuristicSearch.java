@@ -19,6 +19,7 @@ package hu.bme.mit.ftsrg.jointstates.search;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic;
+import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 
@@ -27,9 +28,6 @@ import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
  * 
  */
 public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
-
-  private final int SEARCH_INDEX_OFFSET = 100;
-  private int jointStatesDepth = 0;
 
   /**
    * @param config
@@ -41,17 +39,29 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
   }
 
   /*
-   * (non-Javadoc)
+   * The heuristic goes this way. Do a DFS search but don't cross joint state
+   * levels. When out of uninteresting states produced by DFS, get the next
+   * interesting joint state and explore its state space by DFS.
    * @see
    * gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic#computeHeuristicValue
    * ()
    */
   @Override
   protected int computeHeuristicValue() {
-    if (this.vm.getCurrentTransition().getThreadInfo().getPC().getAttr() == JointstatesInstructionFactory.connectFlag
-        || this.vm.getCurrentTransition().getThreadInfo().getPC().getAttr() == JointstatesInstructionFactory.acceptFlag) {
-      return Integer.MAX_VALUE - this.SEARCH_INDEX_OFFSET + this.jointStatesDepth;
-    }
-    return Integer.MAX_VALUE - this.SEARCH_INDEX_OFFSET - this.vm.getPathLength();
+    //@formatter:off
+    Instruction insn = this.getVM().getCurrentThread().getPC();
+    boolean isConnect = insn == null ? false : insn.getAttr() == JointstatesInstructionFactory.connectFlag;
+    boolean isAccept = insn == null ? false : insn.getAttr()  == JointstatesInstructionFactory.acceptFlag;
+
+    if (isConnect || isAccept) {
+      return Integer.MAX_VALUE;
+        }
+    //@formatter:on
+
+    // -1 is because we would like to avoid priority collisions between the
+    // original DFS states and the 'interesting' joint states
+
+    System.out.println("HELLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+    return Integer.MAX_VALUE - this.vm.getPathLength() - 1;
   }
 }
