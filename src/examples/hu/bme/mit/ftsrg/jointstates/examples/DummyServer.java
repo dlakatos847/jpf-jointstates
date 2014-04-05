@@ -44,5 +44,10 @@ public class DummyServer implements Runnable {
       Thread t = new Thread(new DummyServer(port));
       t.start();
     }
+    for (String input : args) {
+      int port = Integer.parseInt(input);
+      Thread t = new Thread(new DummyServer(port));
+      t.start();
+    }
   }
 }

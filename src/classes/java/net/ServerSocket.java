@@ -21,7 +21,6 @@ public class ServerSocket implements Closeable {
   private int serverSocketId = -1;
   private int port = -1;
   private boolean isClosed = false;
-  private boolean backtrack = false;
 
   static {
     seq_serverSocketId = 0;
@@ -53,15 +52,6 @@ public class ServerSocket implements Closeable {
    */
   public Socket accept() throws SocketException {
     Socket s;
-
-    if (this.backtrack == true) {
-      return null;
-    }
-
-    /*
-     * Stepping ServerSocket.accept() depth
-     */
-    ServerSocket.acceptDepth++;
 
     if (isClosed()) {
       throw new SocketException("Socket is closed");

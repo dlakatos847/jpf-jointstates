@@ -30,8 +30,9 @@ public class JPF_java_net_Socket extends NativePeer {
     int port = v2;
 
     InetAddress addr = InetAddress.getByName(hostName);
-    Socket s = new Socket(addr, port);
-    socketMapping.put(v0, s);
+
+    // Socket s = new Socket(addr, port);
+    // socketMapping.put(v0, s);
   }
 
   @MJI

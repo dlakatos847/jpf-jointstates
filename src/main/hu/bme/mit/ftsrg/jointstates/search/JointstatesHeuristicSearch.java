@@ -19,15 +19,15 @@ package hu.bme.mit.ftsrg.jointstates.search;
 
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic;
-import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.VM;
-import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
 public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
+  public boolean increasedJointDepth = false;
+  public int jointDepth = 0;
 
   /**
    * @param config
@@ -48,20 +48,14 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected int computeHeuristicValue() {
-    //@formatter:off
-    Instruction insn = this.getVM().getCurrentThread().getPC();
-    boolean isConnect = insn == null ? false : insn.getAttr() == JointstatesInstructionFactory.connectFlag;
-    boolean isAccept = insn == null ? false : insn.getAttr()  == JointstatesInstructionFactory.acceptFlag;
-
-    if (isConnect || isAccept) {
-      return Integer.MAX_VALUE;
-        }
-    //@formatter:on
+    if (this.increasedJointDepth) {
+      this.increasedJointDepth = false;
+      return Integer.MAX_VALUE - this.vm.getPathLength() - 100 + this.jointDepth;
+    }
 
     // -1 is because we would like to avoid priority collisions between the
     // original DFS states and the 'interesting' joint states
 
-    System.out.println("HELLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-    return Integer.MAX_VALUE - this.vm.getPathLength() - 1;
+    return Integer.MAX_VALUE - this.vm.getPathLength() - 100;
   }
 }

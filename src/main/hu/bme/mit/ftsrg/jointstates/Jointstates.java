@@ -17,18 +17,17 @@
  */
 package hu.bme.mit.ftsrg.jointstates;
 
-import gov.nasa.jpf.Config;
-import hu.bme.mit.ftsrg.jointstates.command.Commander;
+import java.io.IOException;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com> This is the Master-JPF,
  *         controls the joint m
  */
 public class Jointstates {
-  public static void main(String[] args) {
-    Config config = new Config("jpf.properties");
-    Commander.initialize(config);
-
-    Commander.terminate();
+  public static void main(String[] args) throws IOException, InterruptedException {
+    // Config config = new Config("jpf.properties");
+    // Commander.initialize(config);
+    //
+    // Commander.terminate();
   }
 }

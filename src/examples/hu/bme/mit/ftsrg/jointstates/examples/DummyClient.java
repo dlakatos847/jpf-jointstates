@@ -7,7 +7,6 @@ import java.net.Socket;
 
 public class DummyClient implements Runnable {
   private int port;
-  private final int data = 97;
 
   public DummyClient(int port) {
     this.port = port;
@@ -26,8 +25,10 @@ public class DummyClient implements Runnable {
       InetAddress addr = InetAddress.getByName(hostName);
       socket = new Socket(addr, this.port);
       outStream = socket.getOutputStream();
-      System.out.println("WRITING " + this.data + " to port " + this.port);
-      outStream.write(this.data);
+      System.out.println("WRITING " + 99 + " to port " + this.port);
+      outStream.write(99);
+      System.out.println("WRITING " + 100 + " to port " + this.port);
+      outStream.write(100);
     } catch (Exception e) {
       System.out.println("EXCEPTION RECEIVED");
       e.printStackTrace();

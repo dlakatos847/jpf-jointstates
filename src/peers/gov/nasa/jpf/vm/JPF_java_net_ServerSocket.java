@@ -2,11 +2,9 @@ package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.annotation.MJI;
-import hu.bme.mit.ftsrg.jointstates.collector.PortCollector;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -17,16 +15,15 @@ public class JPF_java_net_ServerSocket extends NativePeer {
 
   @MJI
   public int native_accept__II__I(MJIEnv env, int objRef, int v0, int v1) throws IOException {
-    ServerSocket ss = serverSocketPorts.get(v0);
-    Socket s;
+    // ServerSocket ss = serverSocketPorts.get(v0);
+    // Socket s;
 
     log.info("SERVERSOCKET.ACCEPT " + v0);
-    PortCollector.addPort(env.getVM().getSearch().getDepth(), v0);
 
-    s = ss.accept();
+    // s = ss.accept();
 
     // FIXME @David Lakatos: i don't like this
-    JPF_java_net_Socket.socketMapping.put(v1, s);
+    // JPF_java_net_Socket.socketMapping.put(v1, s);
 
     return 0;
   }

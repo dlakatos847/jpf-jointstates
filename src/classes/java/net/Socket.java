@@ -27,6 +27,7 @@ public class Socket {
   private int socketId = -1;
   private static int seq_socketId = 0;
   private int port = -1;
+  private boolean isClosed = false;
 
   public Socket() {
     this.socketId = nextSeqId();
@@ -60,21 +61,29 @@ public class Socket {
 
   }
 
-  public InputStream getInputStream() {
+  public InputStream getInputStream() throws SocketException {
+    if (this.isClosed) {
+      throw new SocketException("Modeled socket " + this.socketId + " is closed");
+    }
     return new InputStream(this.socketId);
   }
 
-  public OutputStream getOutputStream() throws IOException {
+  public OutputStream getOutputStream() throws SocketException {
+    if (this.isClosed) {
+      throw new SocketException("Modeled socket " + this.socketId + " is closed");
+    }
     return new OutputStream(this.socketId);
   }
 
   public void close() throws IOException {
-    native_closeSocket(this.socketId);
+    this.isClosed = true;
+    // can't close it, might be reused somewhere during MC
+    // native_closeSocket(this.socketId);
   }
 
   @Override
   public String toString() {
-    return "Model class socket";
+    return "Model class socket " + this.socketId;
   }
 
   private native void native_createSocket(int socketId);

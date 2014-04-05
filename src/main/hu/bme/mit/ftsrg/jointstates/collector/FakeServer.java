@@ -31,10 +31,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class FakeServer extends Thread {
   public static BlockingQueue<Integer> message = new LinkedBlockingQueue<Integer>();
 
-  static {
-    new FakeServer(8080);
-  }
-
   int port = -1;
 
   public FakeServer(int port) {
@@ -45,18 +41,23 @@ public class FakeServer extends Thread {
 
   @Override
   public void run() {
-    while (!Thread.interrupted()) {
-      try {
-        ServerSocket serverSocket = new ServerSocket(this.port);
-        Socket socket = serverSocket.accept();
-        InputStream is = socket.getInputStream();
-        Integer input = is.read();
-        message.put(input);
-        socket.close();
-        serverSocket.close();
-      } catch (IOException | InterruptedException e) {
-        e.printStackTrace();
+    try {
+      ServerSocket serverSocket = new ServerSocket(this.port);
+      while (!Thread.interrupted()) {
+        try {
+          Socket socket = serverSocket.accept();
+          InputStream is = socket.getInputStream();
+          Integer input = is.read();
+          message.put(input);
+          socket.close();
+
+        } catch (IOException | InterruptedException e) {
+          e.printStackTrace();
+        }
       }
+      serverSocket.close();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
