@@ -1,7 +1,7 @@
 # Dummy JPF config
 target=hu.bme.mit.ftsrg.jointstates.examples.DummyServer
-target.args=8080
+target.args=2
 jointstates.side=server
 #,gov.nasa.jpf.listener.SimpleDot
-log.level=info
+log.level=finest
 

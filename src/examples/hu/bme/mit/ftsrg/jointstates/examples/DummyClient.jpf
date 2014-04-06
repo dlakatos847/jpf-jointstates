@@ -1,4 +1,5 @@
 # Dummy JPF config
 target=hu.bme.mit.ftsrg.jointstates.examples.DummyClient
+target.args=100
 jointstates.side=client
-log.level=info
+log.level=finest

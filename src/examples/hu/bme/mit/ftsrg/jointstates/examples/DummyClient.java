@@ -6,10 +6,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 public class DummyClient implements Runnable {
-  private int port;
+  private int port = 8080;
+  private int message;
 
-  public DummyClient(int port) {
-    this.port = port;
+  public DummyClient(int message) {
+    this.message = message;
   }
 
   /*
@@ -25,10 +26,8 @@ public class DummyClient implements Runnable {
       InetAddress addr = InetAddress.getByName(hostName);
       socket = new Socket(addr, this.port);
       outStream = socket.getOutputStream();
-      System.out.println("WRITING " + 99 + " to port " + this.port);
-      outStream.write(99);
-      System.out.println("WRITING " + 100 + " to port " + this.port);
-      outStream.write(100);
+      System.out.println("WRITING " + this.message + " to port " + this.port);
+      outStream.write(this.message);
     } catch (Exception e) {
       System.out.println("EXCEPTION RECEIVED");
       e.printStackTrace();
@@ -46,8 +45,8 @@ public class DummyClient implements Runnable {
   public static void main(String[] args) throws Exception {
     System.out.println("STARTED MAIN");
     for (String i : args) {
-      int port = Integer.parseInt(i);
-      Thread t = new Thread(new DummyClient(port));
+      int message = Integer.parseInt(i);
+      Thread t = new Thread(new DummyClient(message));
       t.start();
     }
     System.out.println("ENDED MAIN");

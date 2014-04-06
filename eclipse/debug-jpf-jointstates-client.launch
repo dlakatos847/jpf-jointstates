@@ -17,6 +17,6 @@
 </listAttribute>
 <booleanAttribute key="org.eclipse.jdt.launching.DEFAULT_CLASSPATH" value="false"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="gov.nasa.jpf.JPF"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${workspace_loc:jpf-jointstates}/src/examples/hu/bme/mit/ftsrg/jointstates/examples/DummyClient.jpf 8080"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${workspace_loc:jpf-jointstates}/src/examples/hu/bme/mit/ftsrg/jointstates/examples/DummyClient.jpf"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="jpf-core"/>
 </launchConfiguration>
