@@ -59,7 +59,7 @@ public class ServerSocket implements Closeable {
 
   private native void native_createServerSocket(int port);
 
-  private native int native_accept(int port);
+  private native void native_accept(int port);
 
   // private native void native_closeServerSocket(int port);
 

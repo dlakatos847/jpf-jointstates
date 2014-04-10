@@ -90,7 +90,7 @@ public class Socket {
 
   private native void native_createSocket(int socketId, String addr, int port);
 
-  private native void native_closeSocket(int socketId);
+  private native void native_closeSocket();
 
   public int getSocketId() {
     return this.socketId;

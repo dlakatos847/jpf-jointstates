@@ -18,7 +18,9 @@
 package hu.bme.mit.ftsrg.jointstates.command;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -37,13 +39,16 @@ public class Aggregator extends Thread {
     ADD, QUERY
   }
 
-  private static Object sync = new Object();
-  private static Map<Integer, Set<Integer>> messageOnLevel = new HashMap<Integer, Set<Integer>>();
+  // parent JointStateId -> transitions
+  private static Map<Integer, Set<JointStateTransition>> jointStateTransitions = new HashMap<Integer, Set<JointStateTransition>>();
+  private static int nextJointStateId = 1;
   private static Map<AggregatorType, Integer> aggregatorTypeListenPort = new HashMap<AggregatorType, Integer>();
 
   static {
     aggregatorTypeListenPort.put(AggregatorType.ADD, 8081);
     aggregatorTypeListenPort.put(AggregatorType.QUERY, 8082);
+
+    jointStateTransitions.put(0, new HashSet<JointStateTransition>());
   }
 
   private AggregatorType type;
@@ -68,9 +73,6 @@ public class Aggregator extends Thread {
             runAdd(s);
           } else if (this.type == AggregatorType.QUERY) {
             runQuery(s);
-          } else {
-            System.err.println("Aggregator type problem");
-            System.exit(-1);
           }
         } catch (IOException e) {
           e.printStackTrace();
@@ -91,51 +93,60 @@ public class Aggregator extends Thread {
   }
 
   private void runAdd(Socket s) throws IOException {
-    int jointDepth = s.getInputStream().read();
-    int message = s.getInputStream().read();
-    synchronized (Aggregator.sync) {
-      // create new joint depth if doesn't exist
-      if (!messageOnLevel.containsKey(jointDepth)) {
-        messageOnLevel.put(jointDepth, new HashSet<Integer>());
-        System.out.println("Added new level: " + jointDepth);
-      }
-      // add message to joint depth
-      if (messageOnLevel.get(jointDepth).add(message)) {
-        System.out.println("[" + jointDepth + "] Added new message " + message);
+    InputStream is = s.getInputStream();
+    OutputStream os = s.getOutputStream();
+    int lastJointStateId = is.read();
+    int message = is.read();
+    JointStateTransition newJst = new JointStateTransition(message, nextJointStateId);
+
+    synchronized (jointStateTransitions) {
+      // the parent JointState must already exist
+      assert jointStateTransitions.containsKey(lastJointStateId);
+
+      // add message to the possible JointState transitions
+      Set<JointStateTransition> jstSet = jointStateTransitions.get(lastJointStateId);
+      if (jstSet.add(newJst)) {
+        // create a new parent for further transitions
+        jointStateTransitions.put(nextJointStateId, new HashSet<JointStateTransition>());
+        os.write(nextJointStateId);
+        System.out.println("[" + lastJointStateId + "] Added new transition\tmessage: " + message + "\tnext JointState ID: " + nextJointStateId);
+        nextJointStateId++;
       } else {
-        System.out.println("[" + jointDepth + "] Message already stored " + message);
+        Iterator<JointStateTransition> iter = jstSet.iterator();
+        JointStateTransition exJst = null;
+        while (iter.hasNext()) {
+          exJst = iter.next();
+          if (exJst.equals(newJst)) {
+            os.write(exJst.getNextJointStateId());
+            break;
+          }
+        }
+        System.out.println("[" + lastJointStateId + "] Transition already stored\tmessage " + message + "\tnext JointState ID: " + exJst.getNextJointStateId());
       }
     }
   }
 
   private void runQuery(Socket s) throws IOException {
-    int jointDepth = s.getInputStream().read();
-    synchronized (Aggregator.sync) {
-      Set<Integer> messages = messageOnLevel.get(jointDepth);
-      int[] messagesArray = new int[messages.size()];
-      Iterator<Integer> i = messages.iterator();
-      int j = 0;
-      while (i.hasNext()) {
-        messagesArray[j] = i.next();
-        j++;
-      }
-      ObjectOutputStream os = new ObjectOutputStream(s.getOutputStream());
-      os.writeObject(messagesArray);
-      System.out.print("[" + jointDepth + "] Queried messages. Replied: ");
-      for (int k : messagesArray) {
-        System.out.print(k + " ");
-      }
-      System.out.print("\n");
+    InputStream is = s.getInputStream();
+    OutputStream os = s.getOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(os);
+    int lastJointStateId = is.read();
+    synchronized (jointStateTransitions) {
+      Set<JointStateTransition> jsts = jointStateTransitions.get(lastJointStateId);
+      JointStateTransition jstsArray[] = new JointStateTransition[jsts.size()];
+      jsts.toArray(jstsArray);
+      oos.writeObject(jstsArray);
     }
+    System.out.println("[" + lastJointStateId + "] Queried transitions");
   }
 
   /**
    * @param args
    */
   public static void main(String[] args) {
-    // TODO Auto-generated method stub
     Aggregator addMessageAggregator = new Aggregator(AggregatorType.ADD);
     Aggregator queryMessageAggregator = new Aggregator(AggregatorType.QUERY);
+
     addMessageAggregator.start();
     queryMessageAggregator.start();
   }

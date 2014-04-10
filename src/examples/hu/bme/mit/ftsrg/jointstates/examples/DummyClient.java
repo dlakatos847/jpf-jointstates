@@ -4,13 +4,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Random;
+import java.util.logging.Logger;
 
 public class DummyClient implements Runnable {
-  private int port = 8080;
-  private int message;
+  private static Logger logger = Logger.getLogger("DummyClient");
+  private int port = -1;
 
-  public DummyClient(int message) {
-    this.message = message;
+  /*
+   * messages
+   */
+  private int m1a = 1;
+  private int m1b = 2;
+  private int m2a = 3;
+  private int m2b = 4;
+
+  /**
+   * @param port
+   */
+  public DummyClient(int port) {
+    super();
+    this.port = port;
   }
 
   /*
@@ -19,36 +33,57 @@ public class DummyClient implements Runnable {
    */
   @Override
   public void run() {
-    String hostName = "127.0.0.1";
+    logger.info("start run");
+
+    String hostName = "localhost";
     Socket socket = null;
-    OutputStream outStream = null;
+    OutputStream os = null;
     try {
       InetAddress addr = InetAddress.getByName(hostName);
       socket = new Socket(addr, this.port);
-      outStream = socket.getOutputStream();
-      System.out.println("WRITING " + this.message + " to port " + this.port);
-      outStream.write(this.message);
+      os = socket.getOutputStream();
+      if (new Random(System.currentTimeMillis()).nextBoolean()) {
+        logger.info("writing " + this.m1a + " to port " + this.port);
+        os.write(this.m1a);
+        logger.info("writing " + this.m1b + " to port " + this.port);
+        os.write(this.m1b);
+      } else {
+        logger.info("writing " + this.m2a + " to port " + this.port);
+        os.write(this.m2a);
+        logger.info("writing " + this.m2b + " to port " + this.port);
+        os.write(this.m2b);
+      }
     } catch (Exception e) {
-      System.out.println("EXCEPTION RECEIVED");
-      e.printStackTrace();
+      logger.severe(e.getMessage());
     } finally {
       try {
         if (socket != null) {
           socket.close();
         }
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.severe(e.getMessage());
       }
     }
+
+    logger.info("end run");
   }
 
   public static void main(String[] args) throws Exception {
-    System.out.println("STARTED MAIN");
+    logger.info("start main");
+
+    int port = 8080;
+
+    if (args.length == 0) {
+      args = new String[1];
+      args[0] = String.valueOf(port);
+    }
+
     for (String i : args) {
-      int message = Integer.parseInt(i);
-      Thread t = new Thread(new DummyClient(message));
+      port = Integer.parseInt(i);
+      Thread t = new Thread(new DummyClient(port));
       t.start();
     }
-    System.out.println("ENDED MAIN");
+
+    logger.info("end main");
   }
 }

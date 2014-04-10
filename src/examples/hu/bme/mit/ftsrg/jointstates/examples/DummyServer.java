@@ -4,43 +4,57 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.logging.Logger;
 
 public class DummyServer implements Runnable {
+  private static Logger logger = Logger.getLogger("DummyServer");
   private int port = -1;
-  private static Object sync = new Object();
 
-  public DummyServer() {
-    this.port = 8080;
-  }
-
+  /**
+   * @param port
+   */
   public DummyServer(int port) {
+    super();
     this.port = port;
   }
 
   @Override
   public void run() {
-    // System.out.println("THREAD ENTER " + this.port);
+    logger.info("started run");
+
     try {
       ServerSocket serverSocket = new ServerSocket(this.port);
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
-      int input = is.read();
-      System.out.println("RECEIVED INPUT " + input + " on port " + this.port);
-      if (input == 99) {
-        synchronized (sync) {
-          sync.wait();
-        }
-      }
+      int m1 = is.read();
+      logger.info("received " + m1 + " from port " + this.port);
+      int m2 = is.read();
+      logger.info("received " + m2 + " from port " + this.port);
       socket.close();
       serverSocket.close();
-    } catch (IOException | InterruptedException e) {
-      e.printStackTrace();
+    } catch (IOException e) {
+      logger.severe(e.getMessage());
     }
-    // System.out.println("THREAD EXIT " + this.port);
+
+    logger.info("ended run");
   }
 
   public static void main(String[] args) {
-    Thread t = new Thread(new DummyServer());
-    t.start();
+    logger.info("started main");
+
+    int port = 8080;
+
+    if (args.length == 0) {
+      args = new String[1];
+      args[0] = String.valueOf(port);
+    }
+
+    for (String i : args) {
+      port = Integer.parseInt(i);
+      Thread t = new Thread(new DummyServer(port));
+      t.start();
+    }
+
+    logger.info("ended main");
   }
 }

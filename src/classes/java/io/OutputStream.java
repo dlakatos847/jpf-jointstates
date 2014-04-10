@@ -1,8 +1,9 @@
 package java.io;
 
+import hu.bme.mit.ftsrg.jointstates.JointStateMatcher;
+
 public class OutputStream implements Closeable, Flushable {
   private int socketId;
-  private static int writeDepth;
 
   public OutputStream(int socketId) {
     this.socketId = socketId;
@@ -27,15 +28,13 @@ public class OutputStream implements Closeable, Flushable {
   }
 
   public void write(byte[] b, int off, int len) throws IOException {
-    writeDepth++;
-    System.out.println("writedepth advanced to " + writeDepth);
-    native_write(this.socketId, b, off, len);
+    JointStateMatcher.lastJointStateId = native_write(b, off, len, JointStateMatcher.lastJointStateId);
   }
 
   private native void native_flush(int socketId) throws IOException;
 
   private native void native_close(int socketId) throws IOException;
 
-  private native int native_write(int socketId, byte[] b, int off, int len);
+  private native int native_write(byte[] b, int off, int len, int lastJointStateId) throws IOException;
 
 }
