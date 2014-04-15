@@ -5,19 +5,17 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Random;
-import java.util.logging.Logger;
 
 public class DummyClient implements Runnable {
-  private static Logger logger = Logger.getLogger("DummyClient");
   private int port = -1;
 
   /*
    * messages
    */
   private int m1a = 1;
-  private int m1b = 2;
-  private int m2a = 3;
-  private int m2b = 4;
+  private int m1b = 11;
+  private int m2a = 2;
+  private int m2b = 21;
 
   /**
    * @param port
@@ -33,7 +31,7 @@ public class DummyClient implements Runnable {
    */
   @Override
   public void run() {
-    logger.info("start run");
+    System.out.println("start run");
 
     String hostName = "localhost";
     Socket socket = null;
@@ -43,33 +41,33 @@ public class DummyClient implements Runnable {
       socket = new Socket(addr, this.port);
       os = socket.getOutputStream();
       if (new Random(System.currentTimeMillis()).nextBoolean()) {
-        logger.info("writing " + this.m1a + " to port " + this.port);
+        System.out.println("writing " + this.m1a + " to port " + this.port);
         os.write(this.m1a);
-        logger.info("writing " + this.m1b + " to port " + this.port);
+        System.out.println("writing " + this.m1b + " to port " + this.port);
         os.write(this.m1b);
       } else {
-        logger.info("writing " + this.m2a + " to port " + this.port);
+        System.out.println("writing " + this.m2a + " to port " + this.port);
         os.write(this.m2a);
-        logger.info("writing " + this.m2b + " to port " + this.port);
+        System.out.println("writing " + this.m2b + " to port " + this.port);
         os.write(this.m2b);
       }
     } catch (Exception e) {
-      logger.severe(e.getMessage());
+      System.err.println(e.getMessage());
     } finally {
       try {
         if (socket != null) {
           socket.close();
         }
       } catch (IOException e) {
-        logger.severe(e.getMessage());
+        System.err.println(e.getMessage());
       }
     }
 
-    logger.info("end run");
+    System.out.println("end run");
   }
 
   public static void main(String[] args) throws Exception {
-    logger.info("start main");
+    System.out.println("start main");
 
     int port = 8080;
 
@@ -84,6 +82,6 @@ public class DummyClient implements Runnable {
       t.start();
     }
 
-    logger.info("end main");
+    System.out.println("end main");
   }
 }

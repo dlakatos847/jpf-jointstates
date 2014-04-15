@@ -24,12 +24,11 @@ import gov.nasa.jpf.jvm.bytecode.InstanceInvocation;
 import gov.nasa.jpf.search.Search;
 import gov.nasa.jpf.vm.ElementInfo;
 import gov.nasa.jpf.vm.Instruction;
-import gov.nasa.jpf.vm.RestorableVMState;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
-import hu.bme.mit.ftsrg.jointstates.collector.ApproachedState;
+import gov.nasa.jpf.vm.choice.BreakGenerator;
 import hu.bme.mit.ftsrg.jointstates.collector.PortCollector;
-import hu.bme.mit.ftsrg.jointstates.collector.StateCollector;
+import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
 
@@ -73,27 +72,6 @@ public class JointstatesListener extends ListenerAdapter {
     }
 
     // sendHeartbeatRequest();
-  }
-
-  /*
-   * (non-Javadoc)
-   * @see gov.nasa.jpf.ListenerAdapter#stateAdvanced(gov.nasa.jpf.search.Search)
-   */
-  @Override
-  public void stateAdvanced(Search search) {
-    super.stateAdvanced(search);
-    logger.info("jointstates advanced to depth " + search.getDepth());
-  }
-
-  /*
-   * (non-Javadoc)
-   * @see
-   * gov.nasa.jpf.ListenerAdapter#stateBacktracked(gov.nasa.jpf.search.Search)
-   */
-  @Override
-  public void stateBacktracked(Search search) {
-    super.stateBacktracked(search);
-    logger.info("jointstates backtracked to depth " + search.getDepth());
   }
 
   /*
@@ -164,10 +142,14 @@ public class JointstatesListener extends ListenerAdapter {
 
       }
     }
-  }
 
-  private void addApproachedState(Search search, int port, RestorableVMState state) {
-    StateCollector.addApproachedState(new ApproachedState(search.getDepth(), port, state));
+    if (nextInstruction != null) {
+      if (nextInstruction.getAttr() == JointstatesInstructionFactory.readFlag || nextInstruction.getAttr() == JointstatesInstructionFactory.writeFlag) {
+        vm.setNextChoiceGenerator(new BreakGenerator("r/w before state", currentThread, false));
+        CommandDelegator.lastFlag = nextInstruction.getAttr();
+        logger.info("jointstates added BreakGeneratorCG on level " + vm.getSearch().getDepth());
+      }
+    }
   }
 
   // @formatter:off

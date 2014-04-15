@@ -34,6 +34,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class CommandDelegator implements Runnable {
   private static CommandDelegator cd;
+  public static Object lastFlag = null;
+  public static int lastJointStateDepth = 0;
 
   private Thread cmdThread;
   protected BlockingQueue<Command> receivedCommands = new LinkedBlockingQueue<Command>();
@@ -90,6 +92,10 @@ public class CommandDelegator implements Runnable {
     } catch (ClassNotFoundException | IOException | InterruptedException e) {
       e.printStackTrace();
     }
+  }
+
+  public static void signalReady() {
+
   }
 
   public static Command nextCommand() throws InterruptedException {

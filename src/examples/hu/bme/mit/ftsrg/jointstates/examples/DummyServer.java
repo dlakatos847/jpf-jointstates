@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.logging.Logger;
 
 public class DummyServer implements Runnable {
-  private static Logger logger = Logger.getLogger("DummyServer");
   private int port = -1;
 
   /**
@@ -20,27 +18,27 @@ public class DummyServer implements Runnable {
 
   @Override
   public void run() {
-    logger.info("started run");
+    System.out.println("started run");
 
     try {
       ServerSocket serverSocket = new ServerSocket(this.port);
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
       int m1 = is.read();
-      logger.info("received " + m1 + " from port " + this.port);
+      System.out.println("read " + m1 + " on port " + this.port);
       int m2 = is.read();
-      logger.info("received " + m2 + " from port " + this.port);
+      System.out.println("read " + m2 + " on port " + this.port);
       socket.close();
       serverSocket.close();
     } catch (IOException e) {
-      logger.severe(e.getMessage());
+      System.err.println(e.getMessage());
     }
 
-    logger.info("ended run");
+    System.out.println("ended run");
   }
 
   public static void main(String[] args) {
-    logger.info("started main");
+    System.out.println("started main");
 
     int port = 8080;
 
@@ -55,6 +53,6 @@ public class DummyServer implements Runnable {
       t.start();
     }
 
-    logger.info("ended main");
+    System.out.println("ended main");
   }
 }

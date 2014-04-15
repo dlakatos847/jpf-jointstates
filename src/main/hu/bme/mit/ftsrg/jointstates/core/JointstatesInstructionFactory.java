@@ -27,6 +27,8 @@ import gov.nasa.jpf.vm.Instruction;
 public class JointstatesInstructionFactory extends InstructionFactory {
   public static final Object acceptFlag = new Object();
   public static final Object connectFlag = new Object();
+  public static final Object readFlag = new Object();
+  public static final Object writeFlag = new Object();
 
   @Override
   public Instruction invokevirtual(String clsName, String methodName, String methodSignature) {
@@ -35,6 +37,10 @@ public class JointstatesInstructionFactory extends InstructionFactory {
       i.setAttr(connectFlag);
     } else if (clsName.equals("java/net/ServerSocket") && methodName.equals("accept")) {
       i.setAttr(acceptFlag);
+    } else if (clsName.equals("java/io/InputStream") && methodName.equals("read")) {
+      i.setAttr(readFlag);
+    } else if (clsName.equals("java/io/OutputStream") && methodName.equals("write")) {
+      i.setAttr(writeFlag);
     }
     return i;
   }

@@ -21,6 +21,8 @@ import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic;
 import gov.nasa.jpf.vm.VM;
+import gov.nasa.jpf.vm.choice.BreakGenerator;
+import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
 
 import java.util.logging.Logger;
 
@@ -30,8 +32,6 @@ import java.util.logging.Logger;
  */
 public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
   protected static final Logger logger = JPF.getLogger(JointstatesHeuristicSearch.class.getCanonicalName());
-
-  public int jointStatesDepth = 0;
 
   /**
    * @param config
@@ -52,11 +52,14 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected int computeHeuristicValue() {
+    if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
+      return Integer.MAX_VALUE - 100;
+    }
 
     // -100 is because we would like to avoid priority collisions between the
     // original DFS states and the 'interesting' joint states
 
-    return Integer.MAX_VALUE - this.vm.getPathLength() - 100;
+    return Integer.MAX_VALUE - 100 - this.vm.getPathLength();
   }
 
   /*
@@ -65,7 +68,16 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected boolean generateChildren() {
-    // logger.info("JointStates depth is " + this.jointStatesDepth);
+    if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
+      try {
+
+        CommandDelegator.nextCommand();
+      } catch (InterruptedException e) {
+        logger.severe(e.getMessage());
+        this.vm.getSearch().terminate();
+        return false;
+      }
+    }
 
     return super.generateChildren();
   }
