@@ -136,18 +136,15 @@ public class JointstatesListener extends ListenerAdapter {
   public void instructionExecuted(VM vm, ThreadInfo currentThread, Instruction nextInstruction, Instruction executedInstruction) {
     super.instructionExecuted(vm, currentThread, nextInstruction, executedInstruction);
 
-    if (JointstatesListener.side == Side.CLIENT) {
-      // After Socket.connect()
-      if ((executedInstruction instanceof InstanceInvocation) && (executedInstruction.getAttr() == JointstatesInstructionFactory.connectFlag)) {
-
-      }
-    }
-
     if (nextInstruction != null) {
-      if (nextInstruction.getAttr() == JointstatesInstructionFactory.readFlag || nextInstruction.getAttr() == JointstatesInstructionFactory.writeFlag) {
-        vm.setNextChoiceGenerator(new BreakGenerator("r/w before state", currentThread, false));
+      if (nextInstruction.getAttr() == JointstatesInstructionFactory.readFlag) {
+        vm.setNextChoiceGenerator(new BreakGenerator("jointstates before read state", currentThread, false));
         CommandDelegator.lastFlag = nextInstruction.getAttr();
-        logger.info("jointstates added BreakGeneratorCG on level " + vm.getSearch().getDepth());
+        logger.info("jointstates added BreakGeneratorCG before read on level " + vm.getSearch().getDepth());
+      } else if (nextInstruction.getAttr() == JointstatesInstructionFactory.writeFlag) {
+        vm.setNextChoiceGenerator(new BreakGenerator("jointstates before write state", currentThread, false));
+        CommandDelegator.lastFlag = nextInstruction.getAttr();
+        logger.info("jointstates added BreakGeneratorCG before write on level " + vm.getSearch().getDepth());
       }
     }
   }

@@ -12,7 +12,9 @@ public class InputStream implements Closeable {
   }
 
   public int read() {
-    int[] transitions = native_read(JointStateMatcher.lastJointStateId);
+    int[] transitions = native_read(JointStateMatcher.lastJointStateId, readDepth);
+    readDepth++;
+    native_readDepthIncremented(readDepth);
 
     // this call branches the state space according to the possible JointState
     // transitions
@@ -31,6 +33,8 @@ public class InputStream implements Closeable {
 
   }
 
-  private native int[] native_read(int lastJointStateId);
+  private native int[] native_read(int lastJointStateId, int readDepth);
+
+  private native void native_readDepthIncremented(int readDepth);
 
 }

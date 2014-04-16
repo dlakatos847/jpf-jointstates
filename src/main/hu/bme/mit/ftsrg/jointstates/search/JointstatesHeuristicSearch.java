@@ -23,6 +23,7 @@ import gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
+import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 
 import java.util.logging.Logger;
 
@@ -52,14 +53,40 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected int computeHeuristicValue() {
+    int currentJointStatesDepth;
+    int nextJointStatesDepth;
+    int readDepth = 0;
+    int writeDepth = 0;
+
+    // update the read depth if the class InputStream has been loaded
+    if (this.vm.getSystemState().getKernelState().classLoaders.get(0).getResolvedClassInfo("java.io.InputStream") != null) {
+      readDepth = (int) this.vm.getSystemState().getKernelState().classLoaders.get(0).getResolvedClassInfo("java.io.InputStream")
+          .getStaticFieldValueObject("readDepth");
+    }
+
+    // update the write depth if the class OutputStream has been loaded
+    if (this.vm.getSystemState().getKernelState().classLoaders.get(0).getResolvedClassInfo("java.io.OutputStream") != null) {
+      writeDepth = (int) this.vm.getSystemState().getKernelState().classLoaders.get(0).getResolvedClassInfo("java.io.OutputStream")
+          .getStaticFieldValueObject("writeDepth");
+    }
+
+    currentJointStatesDepth = readDepth + writeDepth;
+    nextJointStatesDepth = currentJointStatesDepth + 1;
+
     if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
-      return Integer.MAX_VALUE - 100;
+      if (CommandDelegator.lastFlag == JointstatesInstructionFactory.readFlag) {
+        // has lower priority than the write tasks
+        return Integer.MAX_VALUE - 100 + nextJointStatesDepth;
+      } else if (CommandDelegator.lastFlag == JointstatesInstructionFactory.writeFlag) {
+        // has higher priority than the read tasks
+        return Integer.MAX_VALUE - 100 + nextJointStatesDepth - 1;
+      }
     }
 
     // -100 is because we would like to avoid priority collisions between the
-    // original DFS states and the 'interesting' joint states
+    // original DFS states and the joint states
 
-    return Integer.MAX_VALUE - 100 - this.vm.getPathLength();
+    return Integer.MAX_VALUE - 100 - this.vm.getPathLength() - 1;
   }
 
   /*
@@ -69,8 +96,8 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
   @Override
   protected boolean generateChildren() {
     if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
-      try {
 
+      try {
         CommandDelegator.nextCommand();
       } catch (InterruptedException e) {
         logger.severe(e.getMessage());

@@ -4,7 +4,8 @@ target.args=8080
 search.class=hu.bme.mit.ftsrg.jointstates.search.JointstatesHeuristicSearch
 jvm.insn_factory.class=hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory
 jointstates.side=server
-log.level=warn
-#listener+=,gov.nasa.jpf.listener.SimpleDot,gov.nasa.jpf.listener.CGMonitor
+log.level=info
+listener+=,gov.nasa.jpf.listener.SimpleDot
+#,gov.nasa.jpf.listener.CGMonitor
 #,gov.nasa.jpf.listener.CallMonitor
 report.console.property_violation=error,snapshot,trace

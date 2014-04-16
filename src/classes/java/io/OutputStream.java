@@ -4,6 +4,7 @@ import hu.bme.mit.ftsrg.jointstates.JointStateMatcher;
 
 public class OutputStream implements Closeable, Flushable {
   private int socketId;
+  private static int writeDepth = 0;
 
   public OutputStream(int socketId) {
     this.socketId = socketId;
@@ -29,6 +30,8 @@ public class OutputStream implements Closeable, Flushable {
 
   public void write(byte[] b, int off, int len) throws IOException {
     JointStateMatcher.lastJointStateId = native_write(b, off, len, JointStateMatcher.lastJointStateId);
+    writeDepth++;
+    System.out.println("New write depth is " + writeDepth);
   }
 
   private native void native_flush(int socketId) throws IOException;

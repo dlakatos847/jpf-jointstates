@@ -13,7 +13,8 @@ import java.net.Socket;
 public class JPF_java_io_InputStream extends NativePeer {
 
   @MJI
-  public int native_read__I___3I(MJIEnv env, int objRef, int lastJointStateId) throws IOException, ClassNotFoundException {
+  public int native_read__II___3I(MJIEnv env, int objRef, int lastJointStateId, int readDepth) throws IOException, ClassNotFoundException {
+    logger.info("jointstates read depth was " + readDepth + " before reading");
     Socket s = new Socket(Inet4Address.getByName("localhost"), 8082);
     OutputStream os = s.getOutputStream();
     InputStream is = s.getInputStream();
@@ -38,5 +39,10 @@ public class JPF_java_io_InputStream extends NativePeer {
     }
 
     return retArrayRef;
+  }
+
+  @MJI
+  public void native_readDepthIncremented__I__V(MJIEnv env, int objRef, int readDepth) {
+    logger.info("jointstates read depth incremented to " + readDepth);
   }
 }
