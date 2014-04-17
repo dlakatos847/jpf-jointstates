@@ -27,15 +27,10 @@ import gov.nasa.jpf.vm.Instruction;
 import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
-import hu.bme.mit.ftsrg.jointstates.collector.PortCollector;
 import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.logging.Logger;
 
 /**
@@ -71,6 +66,7 @@ public class JointstatesListener extends ListenerAdapter {
       search.terminate();
     }
 
+    CommandDelegator.initialize(config);
     // sendHeartbeatRequest();
   }
 
@@ -97,7 +93,7 @@ public class JointstatesListener extends ListenerAdapter {
         logger.info("connect to port " + port);
 
         // Save current state to continue model checking from this point later
-        PortCollector.addPort(vm.getSearch().getDepth(), port);
+        // PortCollector.addPort(vm.getSearch().getDepth(), port);
 
         // Reached the next connect() level, backtrack
         // vm.getSearch().setIgnoredState(true);
@@ -149,52 +145,11 @@ public class JointstatesListener extends ListenerAdapter {
     }
   }
 
-  // @formatter:off
-//  @Override
-//  public void searchFinished(Search search) {
-//    super.searchFinished(search);
-//    Map<Integer, Set<Integer>> portsByDepth = PortCollector.getPortsByDepth();
-//    Iterator<Integer> iter;
-//    for (int i = 1; i <= search.getDepth(); ++i) {
-//      iter = portsByDepth.get(i).iterator();
-//      if (JointstatesSearch.side == Side.CLIENT) {
-//        while (iter.hasNext()) {
-//          logger.info("depth: " + search.getDepth() + ", connect port: " + iter.next());
-//        }
-//      } else if (JointstatesSearch.side == Side.SERVER) {
-//        while (iter.hasNext()) {
-//          logger.info("depth: " + search.getDepth() + ", accept port: " + iter.next());
-//        }
-//      }
-//
-//      // search.getVM().restoreState(StateCollector.getServerState());
-//    }
-//  }
-  // @formatter:on
-
-  public void sendHeartbeatRequest() {
-    String hostName = "127.0.0.1";
-    Socket socket = null;
-    OutputStream outStream = null;
-    try {
-      InetAddress addr = InetAddress.getByName(hostName);
-      int portNumber = 7000;
-      socket = new Socket(addr, portNumber);
-      outStream = socket.getOutputStream();
-      outStream.write(99);
-      if (socket.getInputStream().read() == 100) {
-        logger.info("GOOD HEARTBEAT RESPONSE");
-      } else {
-        logger.severe("WRONG HEARTBEAT RESPONSE");
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    } finally {
-      try {
-        socket.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
+  @Override
+  public void searchFinished(Search search) {
+    super.searchFinished(search);
+    CommandDelegator.end();
+    logger.info("jointstates search finished");
   }
+
 }

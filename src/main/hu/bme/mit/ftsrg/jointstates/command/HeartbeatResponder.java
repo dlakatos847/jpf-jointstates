@@ -15,7 +15,7 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates;
+package hu.bme.mit.ftsrg.jointstates.command;
 
 import gov.nasa.jpf.JPF;
 

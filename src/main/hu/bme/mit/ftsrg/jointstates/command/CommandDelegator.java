@@ -18,92 +18,88 @@
 package hu.bme.mit.ftsrg.jointstates.command;
 
 import gov.nasa.jpf.Config;
+import gov.nasa.jpf.JPF;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Logger;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class CommandDelegator implements Runnable {
+public class CommandDelegator {
+  protected static final Logger logger = JPF.getLogger(CommandDelegator.class.getCanonicalName());
   private static CommandDelegator cd;
   public static Object lastFlag = null;
   public static int lastJointStateDepth = 0;
 
-  private Thread cmdThread;
-  protected BlockingQueue<Command> receivedCommands = new LinkedBlockingQueue<Command>();
-  protected BlockingQueue<ProvidedData> providedReplies = new LinkedBlockingQueue<ProvidedData>();
-  protected int listenPort;
+  Side side = null;
+  Thread sendThread;
+  Thread receiveThread;
+  MessageSender sendInstance;
+  MessageReceiver receiveInstance;
 
   /**
    * 
    */
   public CommandDelegator(Config config) {
     super();
-//    @formatter:off
-//    if (JointstatesSearch.side == Side.CLIENT) {
-//      this.listenPort = Integer.parseInt(config.getString("jointstates.command.clientport"));
-//    } else if (JointstatesSearch.side == Side.SERVER) {
-//      this.listenPort = Integer.parseInt(config.getString("jointstates.command.serverport"));
-//    }
-//    @formatter:on
-    this.cmdThread = new Thread(this);
-    // this.cmdThread.start();
+
+    String sideConfig = config.getString("jointstates.side");
+
+    if (sideConfig != null) {
+      if (sideConfig.equals("client")) {
+        this.side = Side.CLIENT;
+      } else if (sideConfig.equals("server")) {
+        this.side = Side.SERVER;
+      } else {
+        logger.severe("jointstates.side parameter has invalid value. Allowed values are: [client, server]");
+        return;
+      }
+    } else {
+      logger.severe("jointstates.side parameter is missing. Allowed values are: [client, server]");
+      return;
+    }
+
+    this.sendInstance = new MessageSender();
+    this.receiveInstance = new MessageReceiver(this.side);
+    this.sendThread = new Thread(this.sendInstance);
+    this.receiveThread = new Thread(this.receiveInstance);
+    this.sendThread.start();
+    this.receiveThread.start();
   }
 
   public static void initialize(Config config) {
     cd = new CommandDelegator(config);
-  }
-
-  public static void stop() {
-    cd.cmdThread.interrupt();
-  }
-
-  /*
-   * (non-Javadoc)
-   * @see java.lang.Runnable#run()
-   */
-  @Override
-  public void run() {
-    ServerSocket ss;
-    Socket s;
-    ObjectInputStream ois;
-    ObjectOutputStream oos;
     try {
-      ss = new ServerSocket(this.listenPort);
-      while (!Thread.interrupted()) {
-        s = ss.accept();
-        ois = new ObjectInputStream(s.getInputStream());
-        this.receivedCommands.add((Command) ois.readObject());
-        oos = new ObjectOutputStream(s.getOutputStream());
-        oos.writeObject(this.providedReplies.take());
-        oos.close();
-        ois.close();
-        s.close();
-      }
-      ss.close();
-    } catch (ClassNotFoundException | IOException | InterruptedException e) {
-      e.printStackTrace();
+      sendMessage(Message.INIT);
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
+      terminate();
     }
   }
 
-  public static void signalReady() {
-
+  public static void end() {
+    cd.sendThread.interrupt();
+    cd.receiveThread.interrupt();
+    logger.info("jointstates command delegator stopped successfully");
   }
 
-  public static Command nextCommand() throws InterruptedException {
-    return new Command(Side.CLIENT, CommandType.EXPLORE, 0, null);
-    // return cd.receivedCommands.take();
+  public static void terminate() {
+    logger.warning("jointstates command delegator termination");
+    try {
+      sendMessage(Message.ERROR);
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
+    }
+    end();
   }
 
-  public static void provideReply(ProvidedData data) {
-    cd.providedReplies.add(data);
+  public static Message receiveMessage() throws InterruptedException {
+    return cd.receiveInstance.inboundQueue.take();
+  }
+
+  public static void sendMessage(Message msg) throws InterruptedException {
+    cd.sendInstance.sendMessage(Side.COMMANDER, msg);
   }
 }

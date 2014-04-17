@@ -1,0 +1,7 @@
+#/bin/sh
+
+JPF_HOME=`dirname $0`/..
+
+JAVA_FLAGS='-Xmx1024m'
+
+java -classpath $JPF_HOME/build/main hu.bme.mit.ftsrg.jointstates.command.Commander $@

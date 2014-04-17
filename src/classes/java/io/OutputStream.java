@@ -31,7 +31,7 @@ public class OutputStream implements Closeable, Flushable {
   public void write(byte[] b, int off, int len) throws IOException {
     JointStateMatcher.lastJointStateId = native_write(b, off, len, JointStateMatcher.lastJointStateId);
     writeDepth++;
-    System.out.println("New write depth is " + writeDepth);
+    native_writeDepthIncremented(writeDepth);
   }
 
   private native void native_flush(int socketId) throws IOException;
@@ -40,4 +40,5 @@ public class OutputStream implements Closeable, Flushable {
 
   private native int native_write(byte[] b, int off, int len, int lastJointStateId) throws IOException;
 
+  private native void native_writeDepthIncremented(int writeDepth);
 }

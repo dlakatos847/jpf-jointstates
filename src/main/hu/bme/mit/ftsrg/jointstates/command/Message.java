@@ -17,38 +17,10 @@
  */
 package hu.bme.mit.ftsrg.jointstates.command;
 
-import java.util.List;
-
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class ProvidedData {
-  private int depth;
-  private List<Integer> ports;
-  private ProvidedDataType type;
-
-  /**
-   * @param depth
-   * @param ports
-   */
-  public ProvidedData(int depth, List<Integer> ports, ProvidedDataType type) {
-    super();
-    this.depth = depth;
-    this.ports = ports;
-    this.type = type;
-  }
-
-  public int getDepth() {
-    return this.depth;
-  }
-
-  public List<Integer> getPorts() {
-    return this.ports;
-  }
-
-  public ProvidedDataType getType() {
-    return this.type;
-  }
-
+public enum Message {
+  INIT, EXPLORE, READREADY, ERROR, END
 }

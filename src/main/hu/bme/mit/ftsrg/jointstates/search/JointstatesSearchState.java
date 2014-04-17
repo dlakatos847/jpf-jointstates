@@ -15,12 +15,20 @@
  * THE SUBJECT SOFTWARE WILL BE ERROR FREE, OR ANY WARRANTY THAT
  * DOCUMENTATION, IF PROVIDED, WILL CONFORM TO THE SUBJECT SOFTWARE.
  */
-package hu.bme.mit.ftsrg.jointstates.command;
+package hu.bme.mit.ftsrg.jointstates.search;
+
+//@formatter:off
+/*
+ * State machine:
+ * 
+ * NONE ---> NORMAL -> WRITE -> READ ---> END
+ *        `---<---<---<---<---<---<---'
+ */
+//@formatter:on
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
- * 
  */
-public enum ProvidedDataType {
-  OK
+public enum JointstatesSearchState {
+  NONE, NORMAL, WRITE, READ, END
 }

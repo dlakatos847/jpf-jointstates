@@ -17,49 +17,96 @@
  */
 package hu.bme.mit.ftsrg.jointstates.command;
 
-import gov.nasa.jpf.Config;
+import hu.bme.mit.ftsrg.jointstates.command.Aggregator.AggregatorType;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Logger;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
 public class Commander implements Runnable {
-  private static Commander cmd;
+  protected static final Logger logger = Logger.getLogger(Commander.class.getCanonicalName());
+  private static Commander commander;
+  static boolean done = false;
+  static Aggregator addMessageAggregator = new Aggregator(AggregatorType.ADD);
+  static Aggregator queryMessageAggregator = new Aggregator(AggregatorType.QUERY);
 
-  private Thread cmdThread;
-  protected Map<Side, Integer> sidePorts = new HashMap<Side, Integer>();
-  public BlockingQueue<Command> commands = new LinkedBlockingQueue<Command>();
-  public BlockingQueue<ProvidedData> replies = new LinkedBlockingQueue<ProvidedData>();
+  Thread sendThread;
+  Thread receiveThread;
+  MessageSender sendInstance;
+  MessageReceiver receiveInstance;
 
-  public Commander(Config config) {
-    this.sidePorts.put(Side.CLIENT, config.getInt("jointstates.command.clientport", 62301));
-    this.sidePorts.put(Side.SERVER, config.getInt("jointstates.command.serverport", 62302));
-    this.cmdThread = new Thread(this);
-    this.cmdThread.start();
+  public Commander() {
+    this.sendInstance = new MessageSender();
+    this.receiveInstance = new MessageReceiver(Side.COMMANDER);
+    this.sendThread = new Thread(this.sendInstance);
+    this.receiveThread = new Thread(this.receiveInstance);
+    this.sendThread.start();
+    this.receiveThread.start();
   }
 
-  public static void initialize(Config config) {
-    cmd = new Commander(config);
+  public static void initialize() {
+    commander = new Commander();
+    logger.info("jointstates commander is ready to initialize command subsystem");
+
+    addMessageAggregator.start();
+    queryMessageAggregator.start();
+
+    try {
+      Message msg;
+
+      // echo requests
+      for (int i = 0; i < 2; ++i) {
+        msg = receiveMessage();
+        if (msg != Message.INIT) {
+          logger.severe("jointstates commander initialization failed");
+          terminate();
+        } else {
+          logger.info("jointstates commander received init message");
+        }
+      }
+
+      // echo replies
+      sendMessageToClient(Message.INIT);
+      sendMessageToServer(Message.INIT);
+
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
+      terminate();
+    }
   }
 
   public static void terminate() {
-    cmd.cmdThread.interrupt();
+    logger.warning("jointstates commander termination");
+    done = true;
+    try {
+      sendMessageToClient(Message.ERROR);
+      sendMessageToServer(Message.ERROR);
+    } catch (InterruptedException e) {
+      logger.severe("jointstates interrupt occurred during termination");
+    }
+    end();
   }
 
-  public static ProvidedData issueCommand(Command command) throws InterruptedException {
-    cmd.commands.add(command);
-    return cmd.replies.take();
+  public static void end() {
+    done = true;
+    commander.sendThread.interrupt();
+    commander.receiveThread.interrupt();
+    logger.info("jointstates command delegator stopped successfully");
+  }
+
+  public static void sendMessageToClient(Message msg) throws InterruptedException {
+    commander.sendInstance.sendMessage(Side.CLIENT, msg);
+  }
+
+  public static void sendMessageToServer(Message msg) throws InterruptedException {
+    commander.sendInstance.sendMessage(Side.SERVER, msg);
+  }
+
+  public static Message receiveMessage() throws InterruptedException {
+    return commander.receiveInstance.receiveMessage();
   }
 
   /*
@@ -68,21 +115,18 @@ public class Commander implements Runnable {
    */
   @Override
   public void run() {
-    try {
-      while (!Thread.interrupted()) {
-        Command command = this.commands.take();
-        ProvidedData response;
-        Socket s = new Socket(InetAddress.getByName("localhost"), this.sidePorts.get(command.getReceiver()));
-        ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-        ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
-        oos.writeObject(command);
-        response = (ProvidedData) ois.readObject();
-        this.replies.add(response);
+
+  }
+
+  public static void main(String[] args) {
+    Commander.initialize();
+
+    while (!done) {
+      if (true) {
+        done = true;
       }
-    } catch (IOException | ClassNotFoundException e) {
-      e.printStackTrace();
-    } catch (InterruptedException f) {
-      // it's normal
     }
+
+    Commander.end();
   }
 }

@@ -34,4 +34,9 @@ public class JPF_java_io_OutputStream extends NativePeer {
 
     return newJointStateId;
   }
+
+  @MJI
+  public void native_writeDepthIncremented__I__V(MJIEnv env, int objRef, int writeDepth) {
+    logger.info("jointstates write depth incremented to " + writeDepth);
+  }
 }

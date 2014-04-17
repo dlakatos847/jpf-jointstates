@@ -22,5 +22,5 @@ package hu.bme.mit.ftsrg.jointstates.core;
  * 
  */
 public enum Side {
-  CLIENT, SERVER
+  CLIENT, SERVER, COMMANDER,
 }

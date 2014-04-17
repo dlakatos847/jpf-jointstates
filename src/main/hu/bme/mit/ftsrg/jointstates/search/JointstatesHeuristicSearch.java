@@ -23,6 +23,7 @@ import gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
+import hu.bme.mit.ftsrg.jointstates.command.Message;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 
 import java.util.logging.Logger;
@@ -33,6 +34,8 @@ import java.util.logging.Logger;
  */
 public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
   protected static final Logger logger = JPF.getLogger(JointstatesHeuristicSearch.class.getCanonicalName());
+  private static int PRIORITY_OFFSET = 100;
+  JointstatesSearchState searchState = JointstatesSearchState.NONE;
 
   /**
    * @param config
@@ -53,8 +56,72 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected int computeHeuristicValue() {
-    int currentJointStatesDepth;
-    int nextJointStatesDepth;
+    int currentJointStatesDepth = getJointStateDepth();
+    int nextJointStatesDepth = currentJointStatesDepth + 1;
+
+    if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
+      if (CommandDelegator.lastFlag == JointstatesInstructionFactory.readFlag) {
+        // has lower priority than the write tasks
+        return Integer.MAX_VALUE - PRIORITY_OFFSET + 2 * nextJointStatesDepth;
+      } else if (CommandDelegator.lastFlag == JointstatesInstructionFactory.writeFlag) {
+        // has higher priority than the read tasks
+        return Integer.MAX_VALUE - PRIORITY_OFFSET + 2 * nextJointStatesDepth - 1;
+      }
+    }
+
+    // -100 is because we would like to avoid priority collisions between the
+    // original DFS states and the joint states
+
+    return Integer.MAX_VALUE - PRIORITY_OFFSET - this.vm.getPathLength() - 1;
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see gov.nasa.jpf.search.heuristic.HeuristicSearch#generateChildren()
+   */
+  @Override
+  protected boolean generateChildren() {
+    if (this.searchState == JointstatesSearchState.NONE) {
+      try {
+        Message msg = CommandDelegator.receiveMessage();
+        if (msg == Message.INIT) {
+          CommandDelegator.sendMessage(Message.INIT);
+          this.searchState = JointstatesSearchState.NORMAL;
+        }
+      } catch (InterruptedException e) {
+        logger.severe(e.getMessage());
+        CommandDelegator.terminate();
+        terminate();
+        return false;
+      }
+    }
+
+    // If read state or write state loaded
+    if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
+
+      int currentJointStateDepth = getJointStateDepth() + 1;
+
+      // If read state loaded
+      if (this.vm.getChoiceGenerator().getId().equals("jointstates before read state")) {
+        logger.info("jointstates is in read state\tjointstate depth: " + currentJointStateDepth);
+
+      }
+      // If write state loaded
+      else if (this.vm.getChoiceGenerator().getId().equals("jointstates before write state")) {
+        logger.info("jointstates is in write state\tjointstate depth: " + currentJointStateDepth);
+      }
+      // Error
+      else {
+        logger.severe("jointstates search is invalid state");
+        terminate();
+        return false;
+      }
+    }
+
+    return super.generateChildren();
+  }
+
+  private int getJointStateDepth() {
     int readDepth = 0;
     int writeDepth = 0;
 
@@ -70,42 +137,6 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
           .getStaticFieldValueObject("writeDepth");
     }
 
-    currentJointStatesDepth = readDepth + writeDepth;
-    nextJointStatesDepth = currentJointStatesDepth + 1;
-
-    if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
-      if (CommandDelegator.lastFlag == JointstatesInstructionFactory.readFlag) {
-        // has lower priority than the write tasks
-        return Integer.MAX_VALUE - 100 + nextJointStatesDepth;
-      } else if (CommandDelegator.lastFlag == JointstatesInstructionFactory.writeFlag) {
-        // has higher priority than the read tasks
-        return Integer.MAX_VALUE - 100 + nextJointStatesDepth - 1;
-      }
-    }
-
-    // -100 is because we would like to avoid priority collisions between the
-    // original DFS states and the joint states
-
-    return Integer.MAX_VALUE - 100 - this.vm.getPathLength() - 1;
-  }
-
-  /*
-   * (non-Javadoc)
-   * @see gov.nasa.jpf.search.heuristic.HeuristicSearch#generateChildren()
-   */
-  @Override
-  protected boolean generateChildren() {
-    if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
-
-      try {
-        CommandDelegator.nextCommand();
-      } catch (InterruptedException e) {
-        logger.severe(e.getMessage());
-        this.vm.getSearch().terminate();
-        return false;
-      }
-    }
-
-    return super.generateChildren();
+    return readDepth + writeDepth;
   }
 }
