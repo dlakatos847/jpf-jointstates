@@ -26,10 +26,11 @@ import java.util.logging.Logger;
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class Commander implements Runnable {
+public class Commander {
   protected static final Logger logger = Logger.getLogger(Commander.class.getCanonicalName());
   private static Commander commander;
   static boolean done = false;
+  static MessageType lastMessage = MessageType.INIT;
   static Aggregator addMessageAggregator = new Aggregator(AggregatorType.ADD);
   static Aggregator queryMessageAggregator = new Aggregator(AggregatorType.QUERY);
 
@@ -60,7 +61,7 @@ public class Commander implements Runnable {
       // echo requests
       for (int i = 0; i < 2; ++i) {
         msg = receiveMessage();
-        if (msg != Message.INIT) {
+        if (msg.getMsgType() != MessageType.INIT) {
           logger.severe("jointstates commander initialization failed");
           terminate();
         } else {
@@ -69,8 +70,8 @@ public class Commander implements Runnable {
       }
 
       // echo replies
-      sendMessageToClient(Message.INIT);
-      sendMessageToServer(Message.INIT);
+      commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.CLIENT, MessageType.INIT));
+      commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.SERVER, MessageType.INIT));
 
     } catch (InterruptedException e) {
       logger.severe(e.getMessage());
@@ -82,8 +83,8 @@ public class Commander implements Runnable {
     logger.warning("jointstates commander termination");
     done = true;
     try {
-      sendMessageToClient(Message.ERROR);
-      sendMessageToServer(Message.ERROR);
+      commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.CLIENT, MessageType.ERROR));
+      commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.SERVER, MessageType.ERROR));
     } catch (InterruptedException e) {
       logger.severe("jointstates interrupt occurred during termination");
     }
@@ -97,35 +98,53 @@ public class Commander implements Runnable {
     logger.info("jointstates command delegator stopped successfully");
   }
 
-  public static void sendMessageToClient(Message msg) throws InterruptedException {
-    commander.sendInstance.sendMessage(Side.CLIENT, msg);
-  }
-
-  public static void sendMessageToServer(Message msg) throws InterruptedException {
-    commander.sendInstance.sendMessage(Side.SERVER, msg);
-  }
-
   public static Message receiveMessage() throws InterruptedException {
     return commander.receiveInstance.receiveMessage();
   }
 
-  /*
-   * (non-Javadoc)
-   * @see java.lang.Runnable#run()
-   */
-  @Override
-  public void run() {
+  public static void sendExplore() throws InterruptedException {
+    commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.CLIENT, MessageType.EXPLORE));
+    commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.SERVER, MessageType.EXPLORE));
+  }
 
+  public static void sendWrite() throws InterruptedException {
+    commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.CLIENT, MessageType.WRITE));
+    commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.SERVER, MessageType.WRITE));
+  }
+
+  public static void sendRead() throws InterruptedException {
+    commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.CLIENT, MessageType.READ));
+    commander.sendInstance.sendMessage(new Message(0, Side.COMMANDER, Side.SERVER, MessageType.READ));
+  }
+
+  public static void search() {
+    try {
+
+      while (!done) {
+        Message msg = receiveMessage();
+        if (msg.getMsgType() == MessageType.ERROR) {
+          logger.severe("jointstates error received from " + msg.getSource());
+          break;
+        } else if (msg.getMsgType() == MessageType.END) {
+          logger.info("jointstates search ended");
+          break;
+        } else if (msg.getMsgType() == MessageType.WRITEREADY) {
+          assert receiveMessage().getMsgType() == MessageType.WRITEREADY;
+          sendWrite();
+          assert receiveMessage().getMsgType() == MessageType.READREADY;
+          assert receiveMessage().getMsgType() == MessageType.READREADY;
+          sendRead();
+        }
+      }
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
+    }
   }
 
   public static void main(String[] args) {
     Commander.initialize();
 
-    while (!done) {
-      if (true) {
-        done = true;
-      }
-    }
+    search();
 
     Commander.end();
   }

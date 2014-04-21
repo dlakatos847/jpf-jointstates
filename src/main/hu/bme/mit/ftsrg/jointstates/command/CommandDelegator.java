@@ -64,7 +64,9 @@ public class CommandDelegator {
     this.sendInstance = new MessageSender();
     this.receiveInstance = new MessageReceiver(this.side);
     this.sendThread = new Thread(this.sendInstance);
+    this.sendThread.setDaemon(true);
     this.receiveThread = new Thread(this.receiveInstance);
+    this.receiveThread.setDaemon(true);
     this.sendThread.start();
     this.receiveThread.start();
   }
@@ -72,11 +74,15 @@ public class CommandDelegator {
   public static void initialize(Config config) {
     cd = new CommandDelegator(config);
     try {
-      sendMessage(Message.INIT);
+      sendMessage(new Message(0, cd.side, Side.COMMANDER, MessageType.INIT));
     } catch (InterruptedException e) {
       logger.severe(e.getMessage());
       terminate();
     }
+  }
+
+  public static Side getSide() {
+    return cd.side;
   }
 
   public static void end() {
@@ -88,7 +94,7 @@ public class CommandDelegator {
   public static void terminate() {
     logger.warning("jointstates command delegator termination");
     try {
-      sendMessage(Message.ERROR);
+      sendMessage(new Message(0, cd.side, Side.COMMANDER, MessageType.ERROR));
     } catch (InterruptedException e) {
       logger.severe(e.getMessage());
     }
@@ -100,6 +106,6 @@ public class CommandDelegator {
   }
 
   public static void sendMessage(Message msg) throws InterruptedException {
-    cd.sendInstance.sendMessage(Side.COMMANDER, msg);
+    cd.sendInstance.sendMessage(msg);
   }
 }

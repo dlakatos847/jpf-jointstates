@@ -17,53 +17,10 @@
  */
 package hu.bme.mit.ftsrg.jointstates.command;
 
-import hu.bme.mit.ftsrg.jointstates.core.Side;
-
-import java.io.Serializable;
-
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class Message implements Serializable {
-  private static final long serialVersionUID = 6408914686817755165L;
-  int jointStatesDepth;
-  Side source;
-  Side destination;
-  MessageType msgType;
-
-  /**
-   * @param jointStatesDepth
-   * @param source
-   * @param destination
-   * @param msgType
-   */
-  public Message(int jointStatesDepth, Side source, Side destination, MessageType msgType) {
-    super();
-    this.jointStatesDepth = jointStatesDepth;
-    this.source = source;
-    this.destination = destination;
-    this.msgType = msgType;
-  }
-
-  public void setDestination(Side destination) {
-    this.destination = destination;
-  }
-
-  public int getJointStatesDepth() {
-    return this.jointStatesDepth;
-  }
-
-  public Side getSource() {
-    return this.source;
-  }
-
-  public Side getDestination() {
-    return this.destination;
-  }
-
-  public MessageType getMsgType() {
-    return this.msgType;
-  }
-
+public enum MessageType {
+  INIT, EXPLORE, WRITE, READ, READREADY, WRITEREADY, ERROR, END
 }

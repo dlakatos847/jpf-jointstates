@@ -28,6 +28,8 @@ import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
+import hu.bme.mit.ftsrg.jointstates.command.Message;
+import hu.bme.mit.ftsrg.jointstates.command.MessageType;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
 
@@ -148,8 +150,12 @@ public class JointstatesListener extends ListenerAdapter {
   @Override
   public void searchFinished(Search search) {
     super.searchFinished(search);
-    CommandDelegator.end();
-    logger.info("jointstates search finished");
+    try {
+      CommandDelegator.sendMessage(new Message(0, CommandDelegator.getSide(), Side.COMMANDER, MessageType.END));
+      CommandDelegator.end();
+      logger.info("jointstates search finished");
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
+    }
   }
-
 }

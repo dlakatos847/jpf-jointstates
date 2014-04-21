@@ -6,4 +6,4 @@ JPF_JOINTSTATES=`dirname $0`/..
 JAVA_FLAGS="-Xmx1024m"
 CLASSPATH="$JPF_CORE/build/jpf.jar;$JPF_CORE/build/jpf-annotations.jar;$JPF_CORE/build/jpf-classes.jar;$JPF_JOINTSTATES/build/jpf-jointstates.jar;$JPF_JOINTSTATES/build/jpf-jointstates-classes.jar;"
 
-java -classpath "$CLASSPATH" gov.nasa.jpf.JPF $JPF_JOINTSTATES/src/examples/hu/bme/mit/ftsrg/jointstates/examples/DummyClient.jpf $@
+java -classpath "$CLASSPATH" gov.nasa.jpf.JPF $JPF_JOINTSTATES/src/examples/hu/bme/mit/ftsrg/jointstates/examples/DummyServer.jpf $@

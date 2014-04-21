@@ -52,7 +52,7 @@ public class MessageReceiver implements Runnable {
       }
       ss.close();
     } catch (ClassNotFoundException | IOException | InterruptedException e) {
-      e.printStackTrace();
+      logger.severe(e.getMessage());
     }
   }
 }

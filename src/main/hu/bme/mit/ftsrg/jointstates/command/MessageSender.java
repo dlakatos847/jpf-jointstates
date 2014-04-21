@@ -18,7 +18,6 @@ public class MessageSender implements Runnable {
 
   Map<Side, Integer> messagePorts = new HashMap<Side, Integer>();
   BlockingQueue<Message> outboundQueue = new LinkedBlockingQueue<Message>();
-  BlockingQueue<Side> outboundDestination = new LinkedBlockingQueue<Side>();
 
   public MessageSender() {
     this.messagePorts.put(Side.COMMANDER, 62301);
@@ -26,9 +25,8 @@ public class MessageSender implements Runnable {
     this.messagePorts.put(Side.SERVER, 62303);
   }
 
-  public void sendMessage(Side side, Message msg) throws InterruptedException {
+  public void sendMessage(Message msg) throws InterruptedException {
     this.outboundQueue.put(msg);
-    this.outboundDestination.put(side);
   }
 
   /*
@@ -39,15 +37,14 @@ public class MessageSender implements Runnable {
   public void run() {
     while (!Thread.interrupted()) {
       try {
-        int destinationPort = this.messagePorts.get(this.outboundDestination.take());
+        Message msg = this.outboundQueue.take();
+        int destinationPort = this.messagePorts.get(msg.getDestination());
         Socket s = new Socket(Inet4Address.getByName("localhost"), destinationPort);
         OutputStream os = s.getOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(os);
-        oos.writeObject(this.outboundQueue.take());
-      } catch (IOException e) {
+        oos.writeObject(msg);
+      } catch (IOException | InterruptedException e) {
         logger.severe(e.getMessage());
-      } catch (InterruptedException e) {
-        logger.fine(e.getMessage());
       }
     }
   }

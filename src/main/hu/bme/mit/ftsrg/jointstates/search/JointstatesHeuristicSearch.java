@@ -23,7 +23,7 @@ import gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
-import hu.bme.mit.ftsrg.jointstates.command.Message;
+import hu.bme.mit.ftsrg.jointstates.command.MessageType;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 
 import java.util.logging.Logger;
@@ -35,7 +35,8 @@ import java.util.logging.Logger;
 public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
   protected static final Logger logger = JPF.getLogger(JointstatesHeuristicSearch.class.getCanonicalName());
   private static int PRIORITY_OFFSET = 100;
-  JointstatesSearchState searchState = JointstatesSearchState.NONE;
+  boolean isInitialized = false;
+  int lastJointStatesDepth = 0;
 
   /**
    * @param config
@@ -56,7 +57,7 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected int computeHeuristicValue() {
-    int currentJointStatesDepth = getJointStateDepth();
+    int currentJointStatesDepth = getJointStatesDepth();
     int nextJointStatesDepth = currentJointStatesDepth + 1;
 
     if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
@@ -81,34 +82,31 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected boolean generateChildren() {
-    if (this.searchState == JointstatesSearchState.NONE) {
-      try {
-        Message msg = CommandDelegator.receiveMessage();
-        if (msg == Message.INIT) {
-          CommandDelegator.sendMessage(Message.INIT);
-          this.searchState = JointstatesSearchState.NORMAL;
-        }
-      } catch (InterruptedException e) {
-        logger.severe(e.getMessage());
-        CommandDelegator.terminate();
-        terminate();
-        return false;
-      }
+    if (!this.isInitialized) {
+      initialize();
     }
 
     // If read state or write state loaded
     if (this.vm.getChoiceGenerator() instanceof BreakGenerator) {
-
-      int currentJointStateDepth = getJointStateDepth() + 1;
+      int currentJointStatesDepth = getJointStatesDepth();
 
       // If read state loaded
       if (this.vm.getChoiceGenerator().getId().equals("jointstates before read state")) {
-        logger.info("jointstates is in read state\tjointstate depth: " + currentJointStateDepth);
-
+        logger.info("jointstates is in read state\tjointstate depth: " + currentJointStatesDepth);
+        if (!JointstatesSearchStateMachine.advanceSearchState(JointstatesSearchState.READ, currentJointStatesDepth > this.lastJointStatesDepth,
+            currentJointStatesDepth)) {
+          terminate();
+          return false;
+        }
       }
       // If write state loaded
       else if (this.vm.getChoiceGenerator().getId().equals("jointstates before write state")) {
-        logger.info("jointstates is in write state\tjointstate depth: " + currentJointStateDepth);
+        logger.info("jointstates is in write state\tjointstate depth: " + currentJointStatesDepth);
+        if (!JointstatesSearchStateMachine.advanceSearchState(JointstatesSearchState.WRITE, currentJointStatesDepth > this.lastJointStatesDepth,
+            currentJointStatesDepth)) {
+          terminate();
+          return false;
+        }
       }
       // Error
       else {
@@ -118,10 +116,16 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
       }
     }
 
+    this.lastJointStatesDepth = getJointStatesDepth();
+
     return super.generateChildren();
   }
 
-  private int getJointStateDepth() {
+  /**
+   * 
+   * @return The current Jointstates depth
+   */
+  private int getJointStatesDepth() {
     int readDepth = 0;
     int writeDepth = 0;
 
@@ -137,6 +141,24 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
           .getStaticFieldValueObject("writeDepth");
     }
 
-    return readDepth + writeDepth;
+    return readDepth + writeDepth + 1;
+  }
+
+  private boolean initialize() {
+    try {
+      if (CommandDelegator.receiveMessage().getMsgType() != MessageType.INIT) {
+        logger.severe("jointstates initialization failed");
+        terminate();
+        return false;
+      } else {
+        this.isInitialized = true;
+      }
+    } catch (InterruptedException e) {
+      logger.severe(e.getMessage());
+      CommandDelegator.terminate();
+      terminate();
+      return false;
+    }
+    return true;
   }
 }
