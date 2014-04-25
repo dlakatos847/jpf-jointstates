@@ -14,7 +14,7 @@ public class JPF_java_io_InputStream extends NativePeer {
 
   @MJI
   public int native_read__II___3I(MJIEnv env, int objRef, int lastJointStateId, int readDepth) throws IOException, ClassNotFoundException {
-    logger.info("jointstates read depth was " + readDepth + " before reading");
+    logger.warning("jointstates read depth was " + readDepth + " before reading");
     Socket s = new Socket(Inet4Address.getByName("localhost"), 8082);
     OutputStream os = s.getOutputStream();
     InputStream is = s.getInputStream();
@@ -24,11 +24,21 @@ public class JPF_java_io_InputStream extends NativePeer {
     int retArrayRef;
 
     // networking
+    logger.warning("jointstates querying transitions after Joint State ID: " + lastJointStateId);
     os.write(lastJointStateId);
     transitions = (JointStateTransition[]) ois.readObject();
     s.close();
 
     // prepare transitions for return
+    if (transitions.length == 0) {
+      logger.severe("jointstates no transition defined after joint state ID " + lastJointStateId + " on read depth " + readDepth);
+    } else {
+      String log = "jointstates read returned possible messages: ";
+      for (int i = 0; i < transitions.length; ++i) {
+        log += transitions[i].getMessage() + " ";
+      }
+      logger.warning(log);
+    }
     retArrayRef = env.newIntArray(transitions.length * 2);
     retArray = env.getIntArrayObject(retArrayRef);
     int i = 0;
@@ -43,6 +53,6 @@ public class JPF_java_io_InputStream extends NativePeer {
 
   @MJI
   public void native_readDepthIncremented__I__V(MJIEnv env, int objRef, int readDepth) {
-    logger.info("jointstates read depth incremented to " + readDepth);
+    logger.warning("jointstates read depth incremented to " + readDepth);
   }
 }

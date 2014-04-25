@@ -93,8 +93,8 @@ public class Commander {
 
   public static void end() {
     done = true;
-    commander.sendThread.interrupt();
-    commander.receiveThread.interrupt();
+    // commander.sendThread.interrupt();
+    // commander.receiveThread.interrupt();
     logger.info("jointstates command delegator stopped successfully");
   }
 
@@ -119,20 +119,25 @@ public class Commander {
 
   public static void search() {
     try {
-
       while (!done) {
         Message msg = receiveMessage();
         if (msg.getMsgType() == MessageType.ERROR) {
           logger.severe("jointstates error received from " + msg.getSource());
           break;
-        } else if (msg.getMsgType() == MessageType.END) {
-          logger.info("jointstates search ended");
-          break;
+          // } else if (msg.getMsgType() == MessageType.END) {
+          // logger.info("jointstates search ended");
+          // break;
         } else if (msg.getMsgType() == MessageType.WRITEREADY) {
-          assert receiveMessage().getMsgType() == MessageType.WRITEREADY;
+          if (receiveMessage().getMsgType() != MessageType.WRITEREADY) {
+            logger.severe("jointstates protocol error: WRITEREADY -> " + msg.getMsgType());
+          }
           sendWrite();
-          assert receiveMessage().getMsgType() == MessageType.READREADY;
-          assert receiveMessage().getMsgType() == MessageType.READREADY;
+          if (receiveMessage().getMsgType() != MessageType.READREADY) {
+            logger.severe("jointstates protocol error: READREADY -> " + msg.getMsgType());
+          }
+          if (receiveMessage().getMsgType() != MessageType.READREADY) {
+            logger.severe("jointstates protocol error: READREADY -> " + msg.getMsgType());
+          }
           sendRead();
         }
       }

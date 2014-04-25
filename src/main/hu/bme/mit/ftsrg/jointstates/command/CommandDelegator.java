@@ -61,8 +61,8 @@ public class CommandDelegator {
       return;
     }
 
-    this.sendInstance = new MessageSender();
-    this.receiveInstance = new MessageReceiver(this.side);
+    this.sendInstance = new MessageSender(logger);
+    this.receiveInstance = new MessageReceiver(this.side, logger);
     this.sendThread = new Thread(this.sendInstance);
     this.sendThread.setDaemon(true);
     this.receiveThread = new Thread(this.receiveInstance);
@@ -86,9 +86,9 @@ public class CommandDelegator {
   }
 
   public static void end() {
-    cd.sendThread.interrupt();
-    cd.receiveThread.interrupt();
-    logger.info("jointstates command delegator stopped successfully");
+    // cd.sendThread.interrupt();
+    // cd.receiveThread.interrupt();
+    logger.warning("jointstates command delegator stopped successfully");
   }
 
   public static void terminate() {

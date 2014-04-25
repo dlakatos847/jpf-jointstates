@@ -53,7 +53,7 @@ public class HeartbeatResponder extends Thread {
       OutputStream os = s.getOutputStream();
       int input = is.read();
       if (input == this.expectedInput) {
-        logger.info("jointstates heartbeat OK");
+        logger.warning("jointstates heartbeat OK");
         os.write(this.output);
       } else {
         logger.severe("jointstates wrong heartbeat input received: " + input);

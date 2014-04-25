@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Random;
 
 public class DummyClient implements Runnable {
   private int port = -1;
@@ -40,17 +39,17 @@ public class DummyClient implements Runnable {
       InetAddress addr = InetAddress.getByName(hostName);
       socket = new Socket(addr, this.port);
       os = socket.getOutputStream();
-      if (new Random(System.currentTimeMillis()).nextBoolean()) {
-        System.out.println("writing " + this.m1a + " to port " + this.port);
-        os.write(this.m1a);
-        System.out.println("writing " + this.m1b + " to port " + this.port);
-        os.write(this.m1b);
-      } else {
-        System.out.println("writing " + this.m2a + " to port " + this.port);
-        os.write(this.m2a);
-        System.out.println("writing " + this.m2b + " to port " + this.port);
-        os.write(this.m2b);
-      }
+      // if (new Random(System.currentTimeMillis()).nextBoolean()) {
+      System.out.println("writing " + this.m1a + " to port " + this.port);
+      os.write(this.m1a);
+      System.out.println("writing " + this.m1b + " to port " + this.port);
+      os.write(this.m1b);
+      // } else {
+      // System.out.println("writing " + this.m2a + " to port " + this.port);
+      // os.write(this.m2a);
+      // System.out.println("writing " + this.m2b + " to port " + this.port);
+      // os.write(this.m2b);
+      // }
     } catch (Exception e) {
       System.err.println(e.getMessage());
     } finally {

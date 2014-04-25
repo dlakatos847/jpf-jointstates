@@ -31,11 +31,21 @@ import java.util.logging.Logger;
  */
 public class JointstatesSearchStateMachine {
   protected static final Logger logger = JPF.getLogger(JointstatesSearchStateMachine.class.getCanonicalName());
-  static JointstatesSearchState searchState = JointstatesSearchState.NORMAL;
+  public static JointstatesSearchState searchState = JointstatesSearchState.NORMAL;
+  private static int lastJointStatesDepth = -1;
 
   public static boolean advanceSearchState(JointstatesSearchState newSearchState, boolean newLevel, int jointStatesDepth) {
-    if (!newLevel) {
-      return true;
+    lastJointStatesDepth = jointStatesDepth;
+
+    if (newLevel) {
+      try {
+        if (searchState == JointstatesSearchState.WRITE) {
+          writeToRead(jointStatesDepth);
+        }
+        searchState = JointstatesSearchState.NORMAL;
+      } catch (InterruptedException e) {
+        logger.severe(e.getMessage());
+      }
     }
 
     try {
@@ -56,12 +66,32 @@ public class JointstatesSearchStateMachine {
   }
 
   private static void normalToWrite(int jointStatesDepth) throws InterruptedException {
+    logger.warning("jointstates sending message " + MessageType.WRITEREADY);
     CommandDelegator.sendMessage(new Message(jointStatesDepth, CommandDelegator.getSide(), Side.COMMANDER, MessageType.WRITEREADY));
-    assert CommandDelegator.receiveMessage().getMsgType() == MessageType.WRITE;
+    logger.warning("jointstates waiting for message " + MessageType.WRITE);
+    if (CommandDelegator.receiveMessage().getMsgType() != MessageType.WRITE) {
+      logger.severe("jointstates protocol error");
+    }
+    searchState = JointstatesSearchState.WRITE;
   }
 
   private static void writeToRead(int jointStatesDepth) throws InterruptedException {
+    logger.warning("jointstates sending message " + MessageType.READREADY);
     CommandDelegator.sendMessage(new Message(jointStatesDepth, CommandDelegator.getSide(), Side.COMMANDER, MessageType.READREADY));
-    assert CommandDelegator.receiveMessage().getMsgType() == MessageType.READ;
+    logger.warning("jointstates waiting for message " + MessageType.READ);
+    if (CommandDelegator.receiveMessage().getMsgType() != MessageType.READ) {
+      logger.severe("jointstates protocol error");
+    }
+    searchState = JointstatesSearchState.READ;
+  }
+
+  public static void finish() {
+    try {
+      if (searchState == JointstatesSearchState.WRITE) {
+        writeToRead(lastJointStatesDepth);
+      }
+    } catch (InterruptedException e) {
+
+    }
   }
 }

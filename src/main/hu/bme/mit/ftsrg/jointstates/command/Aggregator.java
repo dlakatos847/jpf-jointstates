@@ -101,7 +101,7 @@ public class Aggregator extends Thread {
 
     synchronized (jointStateTransitions) {
       // the parent JointState must already exist
-      assert jointStateTransitions.containsKey(lastJointStateId);
+      assert jointStateTransitions.containsKey(lastJointStateId) == true;
 
       // add message to the possible JointState transitions
       Set<JointStateTransition> jstSet = jointStateTransitions.get(lastJointStateId);
@@ -121,7 +121,8 @@ public class Aggregator extends Thread {
             break;
           }
         }
-        System.out.println("[" + lastJointStateId + "] Transition already stored\tmessage " + message + "\tnext JointState ID: " + exJst.getNextJointStateId());
+        System.out
+            .println("[" + lastJointStateId + "] Transition already stored\tmessage: " + message + "\tnext JointState ID: " + exJst.getNextJointStateId());
       }
     }
   }

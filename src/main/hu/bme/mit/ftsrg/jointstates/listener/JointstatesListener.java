@@ -28,10 +28,9 @@ import gov.nasa.jpf.vm.ThreadInfo;
 import gov.nasa.jpf.vm.VM;
 import gov.nasa.jpf.vm.choice.BreakGenerator;
 import hu.bme.mit.ftsrg.jointstates.command.CommandDelegator;
-import hu.bme.mit.ftsrg.jointstates.command.Message;
-import hu.bme.mit.ftsrg.jointstates.command.MessageType;
 import hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
+import hu.bme.mit.ftsrg.jointstates.search.JointstatesSearchStateMachine;
 
 import java.util.logging.Logger;
 
@@ -92,7 +91,7 @@ public class JointstatesListener extends ListenerAdapter {
         callerRef = ii.getCalleeThis(currentThread);
         elementInfo = vm.getHeap().get(callerRef);
         port = elementInfo.getIntField("port");
-        logger.info("connect to port " + port);
+        logger.warning("jointstates connect to port " + port);
 
         // Save current state to continue model checking from this point later
         // PortCollector.addPort(vm.getSearch().getDepth(), port);
@@ -109,7 +108,7 @@ public class JointstatesListener extends ListenerAdapter {
         callerRef = ii.getCalleeThis(currentThread);
         elementInfo = vm.getHeap().get(callerRef);
         port = elementInfo.getIntField("port");
-        logger.info("accept on port " + port);
+        logger.warning("jointstates accept on port " + port);
 
         //@formatter:off
         // Save current state to continue model checking from this point later
@@ -135,14 +134,14 @@ public class JointstatesListener extends ListenerAdapter {
     super.instructionExecuted(vm, currentThread, nextInstruction, executedInstruction);
 
     if (nextInstruction != null) {
-      if (nextInstruction.getAttr() == JointstatesInstructionFactory.readFlag) {
-        vm.setNextChoiceGenerator(new BreakGenerator("jointstates before read state", currentThread, false));
-        CommandDelegator.lastFlag = nextInstruction.getAttr();
-        logger.info("jointstates added BreakGeneratorCG before read on level " + vm.getSearch().getDepth());
-      } else if (nextInstruction.getAttr() == JointstatesInstructionFactory.writeFlag) {
+      if (nextInstruction.getAttr() == JointstatesInstructionFactory.writeFlag) {
         vm.setNextChoiceGenerator(new BreakGenerator("jointstates before write state", currentThread, false));
         CommandDelegator.lastFlag = nextInstruction.getAttr();
-        logger.info("jointstates added BreakGeneratorCG before write on level " + vm.getSearch().getDepth());
+        logger.warning("jointstates added BreakGeneratorCG before write on level " + vm.getSearch().getDepth());
+      } else if (nextInstruction.getAttr() == JointstatesInstructionFactory.readFlag) {
+        vm.setNextChoiceGenerator(new BreakGenerator("jointstates before read state", currentThread, false));
+        CommandDelegator.lastFlag = nextInstruction.getAttr();
+        logger.warning("jointstates added BreakGeneratorCG before read on level " + vm.getSearch().getDepth());
       }
     }
   }
@@ -150,12 +149,14 @@ public class JointstatesListener extends ListenerAdapter {
   @Override
   public void searchFinished(Search search) {
     super.searchFinished(search);
-    try {
-      CommandDelegator.sendMessage(new Message(0, CommandDelegator.getSide(), Side.COMMANDER, MessageType.END));
-      CommandDelegator.end();
-      logger.info("jointstates search finished");
-    } catch (InterruptedException e) {
-      logger.severe(e.getMessage());
-    }
+    // try {
+    // CommandDelegator.sendMessage(new Message(0, CommandDelegator.getSide(),
+    // Side.COMMANDER, MessageType.END));
+    CommandDelegator.end();
+    JointstatesSearchStateMachine.finish();
+    logger.info("jointstates search finished");
+    // } catch (InterruptedException e) {
+    // logger.severe(e.getMessage());
+    // }
   }
 }

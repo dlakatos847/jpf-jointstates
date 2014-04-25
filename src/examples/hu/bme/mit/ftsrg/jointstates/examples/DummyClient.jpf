@@ -2,4 +2,7 @@
 target=hu.bme.mit.ftsrg.jointstates.examples.DummyClient
 target.args=8080
 jointstates.side=client
-log.level=info
+log.level=warn
+search.class=hu.bme.mit.ftsrg.jointstates.search.JointstatesHeuristicSearch
+jvm.insn_factory.class=hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory
+report.console.property_violation=error,snapshot,trace

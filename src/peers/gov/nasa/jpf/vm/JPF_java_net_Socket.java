@@ -3,7 +3,6 @@ package gov.nasa.jpf.vm;
 import gov.nasa.jpf.annotation.MJI;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class JPF_java_net_Socket extends NativePeer {
 
@@ -15,11 +14,11 @@ public class JPF_java_net_Socket extends NativePeer {
   @MJI
   public void native_createSocket__ILjava_lang_String_2I__V(MJIEnv env, int objRef, int v0, int hostnameRef, int port) throws IOException {
     String hostname = env.getStringObject(hostnameRef);
-    logger.log(Level.INFO, "SOCKET CREATE " + hostname + ":" + port);
+    logger.warning("jointstates Socket.create() " + hostname + ":" + port);
   }
 
   @MJI
   public void native_closeSocket____V(MJIEnv env, int objRef) {
-    logger.log(Level.INFO, "SOCKET CLOSE");
+    logger.warning("jointstates Socket.close()");
   }
 }

@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 public class MessageReceiver implements Runnable {
 
-  protected static final Logger logger = Logger.getLogger(MessageReceiver.class.getCanonicalName());
+  protected static Logger logger;
 
   int listenPort = -1;
   BlockingQueue<Message> inboundQueue = new LinkedBlockingQueue<Message>();
@@ -25,6 +25,17 @@ public class MessageReceiver implements Runnable {
     messagePorts.put(Side.CLIENT, 62302);
     messagePorts.put(Side.SERVER, 62303);
 
+    MessageReceiver.logger = Logger.getLogger(MessageReceiver.class.getCanonicalName());
+    this.listenPort = messagePorts.get(side);
+  }
+
+  public MessageReceiver(Side side, Logger logger) {
+    Map<Side, Integer> messagePorts = new HashMap<Side, Integer>();
+    messagePorts.put(Side.COMMANDER, 62301);
+    messagePorts.put(Side.CLIENT, 62302);
+    messagePorts.put(Side.SERVER, 62303);
+
+    MessageReceiver.logger = logger;
     this.listenPort = messagePorts.get(side);
   }
 
@@ -41,12 +52,15 @@ public class MessageReceiver implements Runnable {
     ServerSocket ss;
     Socket s;
     ObjectInputStream ois;
+    Message msg;
     try {
       ss = new ServerSocket(this.listenPort);
       while (!Thread.interrupted()) {
         s = ss.accept();
         ois = new ObjectInputStream(s.getInputStream());
-        this.inboundQueue.put((Message) ois.readObject());
+        msg = (Message) ois.readObject();
+        logger.warning("jointstates message received from: " + msg.getSource() + " to: " + msg.getDestination() + " message: " + msg.getMsgType());
+        this.inboundQueue.put(msg);
         ois.close();
         s.close();
       }
