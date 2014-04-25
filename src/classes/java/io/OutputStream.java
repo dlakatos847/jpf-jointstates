@@ -29,7 +29,7 @@ public class OutputStream implements Closeable, Flushable {
   }
 
   public void write(byte[] b, int off, int len) throws IOException {
-    JointStateMatcher.lastJointStateId = native_write(b, off, len, JointStateMatcher.lastJointStateId);
+    JointStateMatcher.jointStateId = native_write(b, off, len, JointStateMatcher.jointStateId);
     writeDepth++;
     native_writeDepthIncremented(writeDepth);
   }

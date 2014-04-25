@@ -1,9 +1,11 @@
 package hu.bme.mit.ftsrg.jointstates.examples;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Random;
 
 public class DummyClient implements Runnable {
   private int port = -1;
@@ -11,10 +13,12 @@ public class DummyClient implements Runnable {
   /*
    * messages
    */
-  private int m1a = 1;
-  private int m1b = 11;
-  private int m2a = 2;
-  private int m2b = 21;
+  private int w1 = 1;
+  private int r1;
+  private int r1e = 11;
+  private int w2 = 2;
+  private int r2;
+  private int r2e = 21;
 
   /**
    * @param port
@@ -34,22 +38,32 @@ public class DummyClient implements Runnable {
 
     String hostName = "localhost";
     Socket socket = null;
+    InputStream is = null;
     OutputStream os = null;
     try {
       InetAddress addr = InetAddress.getByName(hostName);
       socket = new Socket(addr, this.port);
+      is = socket.getInputStream();
       os = socket.getOutputStream();
-      // if (new Random(System.currentTimeMillis()).nextBoolean()) {
-      System.out.println("writing " + this.m1a + " to port " + this.port);
-      os.write(this.m1a);
-      System.out.println("writing " + this.m1b + " to port " + this.port);
-      os.write(this.m1b);
-      // } else {
-      // System.out.println("writing " + this.m2a + " to port " + this.port);
-      // os.write(this.m2a);
-      // System.out.println("writing " + this.m2b + " to port " + this.port);
-      // os.write(this.m2b);
-      // }
+      if (new Random(System.currentTimeMillis()).nextBoolean()) {
+        System.out.println("write " + this.w1 + " to port " + this.port);
+        os.write(this.w1);
+        System.out.println("wrote " + this.w1 + " to port " + this.port);
+
+        System.out.println("read from port " + this.port);
+        this.r1 = is.read();
+        System.out.println("read " + this.r1 + " from port " + this.port);
+        evaluate(this.r1, this.r1e);
+      } else {
+        System.out.println("write " + this.w2 + " to port " + this.port);
+        os.write(this.w2);
+        System.out.println("wrote " + this.w2 + " to port " + this.port);
+
+        System.out.println("read from port " + this.port);
+        this.r2 = is.read();
+        System.out.println("read " + this.r2 + " from port " + this.port);
+        evaluate(this.r2, this.r2e);
+      }
     } catch (Exception e) {
       System.err.println(e.getMessage());
     } finally {
@@ -63,6 +77,15 @@ public class DummyClient implements Runnable {
     }
 
     System.out.println("end run");
+  }
+
+  private void evaluate(int received, int expected) {
+    System.out.print("result: ");
+    if (received == expected) {
+      System.out.println("expected");
+    } else {
+      System.out.println("not expected");
+    }
   }
 
   public static void main(String[] args) throws Exception {

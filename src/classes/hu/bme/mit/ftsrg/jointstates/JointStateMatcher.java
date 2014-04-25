@@ -22,5 +22,5 @@ package hu.bme.mit.ftsrg.jointstates;
  * 
  */
 public class JointStateMatcher {
-  public static int lastJointStateId = 0;
+  public static volatile int jointStateId = 0;
 }

@@ -12,18 +12,22 @@ public class InputStream implements Closeable {
   }
 
   public int read() {
-    int[] transitions = native_read(JointStateMatcher.lastJointStateId, readDepth);
+    int lastJointStateId = JointStateMatcher.jointStateId;
+    int[] transitions = native_read(JointStateMatcher.jointStateId, readDepth);
+
+    // increment read depth and log it
     readDepth++;
     native_readDepthIncremented(readDepth);
 
-    // this call branches the state space according to the possible JointState
+    // this call branches the state space according to the possible Joint State
     // transitions
     int index = Verify.getInt(0, (transitions.length / 2) - 1);
 
-    // set the next JointStateId
-    JointStateMatcher.lastJointStateId = transitions[index * 2];
+    // set the next Joint State ID and log it
+    JointStateMatcher.jointStateId = transitions[index * 2];
+    native_jointStateIdSet(lastJointStateId, JointStateMatcher.jointStateId);
 
-    // return the message
+    // return the chosen message
     return transitions[index * 2 + 1];
   }
 
@@ -36,5 +40,7 @@ public class InputStream implements Closeable {
   private native int[] native_read(int lastJointStateId, int readDepth);
 
   private native void native_readDepthIncremented(int readDepth);
+
+  private native void native_jointStateIdSet(int lastJointStateId, int newJointStateId);
 
 }

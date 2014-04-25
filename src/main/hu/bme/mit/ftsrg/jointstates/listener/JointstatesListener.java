@@ -146,6 +146,29 @@ public class JointstatesListener extends ListenerAdapter {
     }
   }
 
+  /*
+   * (non-Javadoc)
+   * @see gov.nasa.jpf.ListenerAdapter#stateStored(gov.nasa.jpf.search.Search)
+   */
+  @Override
+  public void stateStored(Search search) {
+    super.stateStored(search);
+
+    logger.warning("jointstates stored state [" + search.getStateId() + "]");
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see
+   * gov.nasa.jpf.ListenerAdapter#stateProcessed(gov.nasa.jpf.search.Search)
+   */
+  @Override
+  public void stateProcessed(Search search) {
+    super.stateProcessed(search);
+
+    logger.warning("jointstates processed state [" + search.getStateId() + "]");
+  }
+
   @Override
   public void searchFinished(Search search) {
     super.searchFinished(search);

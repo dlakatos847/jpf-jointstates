@@ -27,17 +27,23 @@ import java.util.logging.Logger;
  * 
  */
 public class Commander {
-  protected static final Logger logger = Logger.getLogger(Commander.class.getCanonicalName());
+  private static Logger logger = null;
   private static Commander commander;
   static boolean done = false;
   static MessageType lastMessage = MessageType.INIT;
-  static Aggregator addMessageAggregator = new Aggregator(AggregatorType.ADD);
-  static Aggregator queryMessageAggregator = new Aggregator(AggregatorType.QUERY);
+  static Aggregator addMessageAggregator = null;
+  static Aggregator queryMessageAggregator = null;
 
   Thread sendThread;
   Thread receiveThread;
   MessageSender sendInstance;
   MessageReceiver receiveInstance;
+
+  static {
+    logger = Logger.getLogger(Commander.class.getCanonicalName());
+    addMessageAggregator = new Aggregator(AggregatorType.ADD, logger);
+    queryMessageAggregator = new Aggregator(AggregatorType.QUERY, logger);
+  }
 
   public Commander() {
     this.sendInstance = new MessageSender();

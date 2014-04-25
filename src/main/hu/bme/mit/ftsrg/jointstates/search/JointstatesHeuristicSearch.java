@@ -50,6 +50,7 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
 
   // Initialize Joint States
   private boolean initialize() {
+    logger.warning("jointstates initialization started");
     try {
       if (CommandDelegator.receiveMessage().getMsgType() != MessageType.INIT) {
         logger.severe("jointstates initialization failed");
@@ -64,6 +65,7 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
       terminate();
       return false;
     }
+    logger.warning("jointstates initialization succeeded");
     return true;
   }
 
@@ -77,6 +79,7 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
    */
   @Override
   protected int computeHeuristicValue() {
+    int heuristicValue = -1;
     int currentJointStatesDepth = getJointStatesDepth();
     int nextJointStatesDepth = currentJointStatesDepth + 1;
 
@@ -89,19 +92,32 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
       }
     }
 
+    // The state is a joint state
     if (attr != null) {
-      if (attr == JointstatesInstructionFactory.readFlag) {
-        // has lower priority than the write tasks
-        return Integer.MAX_VALUE - PRIORITY_OFFSET + 2 * nextJointStatesDepth;
-      } else if (attr == JointstatesInstructionFactory.writeFlag) {
-        // has higher priority than the read tasks
-        return Integer.MAX_VALUE - PRIORITY_OFFSET + 2 * nextJointStatesDepth - 1;
+      if (attr == JointstatesInstructionFactory.writeFlag) {
+        logger.warning("jointstates computing heuristic value for write state");
+
+        // has higher priority than the read tasks (-1)
+        heuristicValue = Integer.MAX_VALUE - PRIORITY_OFFSET + 2 * nextJointStatesDepth - 1;
+      } else if (attr == JointstatesInstructionFactory.readFlag) {
+        logger.warning("jointstates computing heuristic value for read state");
+
+        // has lower priority than the write tasks (missing -1)
+        heuristicValue = Integer.MAX_VALUE - PRIORITY_OFFSET + 2 * nextJointStatesDepth;
       }
     }
+    // The state is a normal state (simple DFS)
+    else {
+      logger.warning("jointstates computing heuristic value for normal state");
+
+      heuristicValue = Integer.MAX_VALUE - PRIORITY_OFFSET - this.vm.getPathLength() - 1;
+    }
+
+    logger.warning("jointstates computed heuristic value " + heuristicValue);
 
     // -100 is because we would like to avoid priority collisions between the
     // original DFS states and the joint states
-    return Integer.MAX_VALUE - PRIORITY_OFFSET - this.vm.getPathLength() - 1;
+    return heuristicValue;
   }
 
   /*
@@ -122,10 +138,11 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
         attr = ti.getPC().getAttr();
       }
     }
+
     if (attr != null) {
       // If write state loaded
       if (attr == JointstatesInstructionFactory.writeFlag) {
-        logger.warning("jointstates is in write state where current jointstate depth is " + getJointStatesDepth());
+        logger.warning("jointstates loaded write state [" + this.parentState.getStateId() + "] where current jointstate depth is " + getJointStatesDepth());
         if (!JointstatesSearchStateMachine.advanceSearchState(JointstatesSearchState.WRITE, getJointStatesDepth() > this.lastJointStatesDepth,
             getJointStatesDepth())) {
           logger.severe("jointstates error occurred");
@@ -136,7 +153,7 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
       }
       // If read state loaded
       else if (attr == JointstatesInstructionFactory.readFlag) {
-        logger.warning("jointstates is in read state where current jointstate depth is " + getJointStatesDepth());
+        logger.warning("jointstates loaded read state [" + this.parentState.getStateId() + "] where current jointstate depth is " + getJointStatesDepth());
         if (!JointstatesSearchStateMachine.advanceSearchState(JointstatesSearchState.READ, getJointStatesDepth() > this.lastJointStatesDepth,
             getJointStatesDepth())) {
           logger.severe("jointstates error occurred");
@@ -145,6 +162,8 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
         }
         this.lastJointStatesDepth = getJointStatesDepth();
       }
+    } else {
+      logger.warning("jointstates loaded normal state [" + this.parentState.getStateId() + "] where current jointstate depth is " + getJointStatesDepth());
     }
 
     return super.generateChildren();
@@ -158,18 +177,26 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
     int readDepth = 0;
     int writeDepth = 0;
 
-    // Default class loader
+    // Default class loader used to reach the SuT classes' state (static
+    // variables)
     ClassLoaderInfo cli = this.vm.getSystemState().getKernelState().classLoaders.get(0);
 
     // update the write depth if the class OutputStream has been loaded
     if (cli.getResolvedClassInfo("java.io.OutputStream") != null) {
       writeDepth = (int) this.vm.getSystemState().getKernelState().classLoaders.get(0).getResolvedClassInfo("java.io.OutputStream")
           .getStaticFieldValueObject("writeDepth");
+    } else {
+      logger.severe("jointstates java.io.OutputStream class not loaded");
+      terminate();
     }
+
     // update the read depth if the class InputStream has been loaded
-    else if (cli.getResolvedClassInfo("java.io.InputStream") != null) {
+    if (cli.getResolvedClassInfo("java.io.InputStream") != null) {
       readDepth = (int) this.vm.getSystemState().getKernelState().classLoaders.get(0).getResolvedClassInfo("java.io.InputStream")
           .getStaticFieldValueObject("readDepth");
+    } else {
+      logger.severe("jointstates java.io.InputStream class not loaded");
+      terminate();
     }
 
     return readDepth + writeDepth;

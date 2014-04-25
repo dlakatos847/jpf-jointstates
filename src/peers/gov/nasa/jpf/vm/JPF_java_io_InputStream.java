@@ -14,7 +14,7 @@ public class JPF_java_io_InputStream extends NativePeer {
 
   @MJI
   public int native_read__II___3I(MJIEnv env, int objRef, int lastJointStateId, int readDepth) throws IOException, ClassNotFoundException {
-    logger.warning("jointstates read depth was " + readDepth + " before reading");
+    logger.warning("jointstates read depth was " + readDepth + " before native reading");
     Socket s = new Socket(Inet4Address.getByName("localhost"), 8082);
     OutputStream os = s.getOutputStream();
     InputStream is = s.getInputStream();
@@ -24,14 +24,14 @@ public class JPF_java_io_InputStream extends NativePeer {
     int retArrayRef;
 
     // networking
-    logger.warning("jointstates querying transitions after Joint State ID: " + lastJointStateId);
+    logger.warning("jointstates querying possible transitions after joint state id " + lastJointStateId);
     os.write(lastJointStateId);
     transitions = (JointStateTransition[]) ois.readObject();
     s.close();
 
     // prepare transitions for return
     if (transitions.length == 0) {
-      logger.severe("jointstates no transition defined after joint state ID " + lastJointStateId + " on read depth " + readDepth);
+      logger.severe("jointstates no transition defined after joint state id " + lastJointStateId + " on read depth " + readDepth);
     } else {
       String log = "jointstates read returned possible messages: ";
       for (int i = 0; i < transitions.length; ++i) {
@@ -53,6 +53,11 @@ public class JPF_java_io_InputStream extends NativePeer {
 
   @MJI
   public void native_readDepthIncremented__I__V(MJIEnv env, int objRef, int readDepth) {
-    logger.warning("jointstates read depth incremented to " + readDepth);
+    logger.warning("jointstates read depth incremented from " + (readDepth - 1) + " to " + readDepth);
+  }
+
+  @MJI
+  public void native_jointStateIdSet__II__V(MJIEnv env, int objRef, int lastJointStateId, int newJointStateId) {
+    logger.warning("jointstates joint state id set from " + lastJointStateId + " to " + newJointStateId);
   }
 }

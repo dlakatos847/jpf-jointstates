@@ -2,6 +2,7 @@ package hu.bme.mit.ftsrg.jointstates.examples;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -18,23 +19,36 @@ public class DummyServer implements Runnable {
 
   @Override
   public void run() {
-    System.out.println("started run");
+    System.out.println("start run");
 
     try {
       ServerSocket serverSocket = new ServerSocket(this.port);
       Socket socket = serverSocket.accept();
       InputStream is = socket.getInputStream();
-      int m1 = is.read();
-      System.out.println("read " + m1 + " on port " + this.port);
-      int m2 = is.read();
-      System.out.println("read " + m2 + " on port " + this.port);
+      OutputStream os = socket.getOutputStream();
+
+      System.out.println("read from port " + this.port);
+      int r = is.read();
+      System.out.println("read " + r + " from port " + this.port);
+
+      int w;
+      if (r == 1) {
+        w = 10 * r + 1;
+      } else {
+        w = 10 * r + 5;
+      }
+
+      System.out.println("write " + w + " to port " + this.port);
+      os.write(w);
+      System.out.println("wrote " + w + " to port " + this.port);
+
       socket.close();
       serverSocket.close();
     } catch (IOException e) {
       System.err.println(e.getMessage());
     }
 
-    System.out.println("ended run");
+    System.out.println("end run");
   }
 
   public static void main(String[] args) {
