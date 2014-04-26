@@ -14,10 +14,10 @@ public class DummyClient implements Runnable {
    * messages
    */
   private int w1 = 1;
-  private int r1;
+  private int r1 = 0;
   private int r1e = 11;
   private int w2 = 2;
-  private int r2;
+  private int r2 = 0;
   private int r2e = 21;
 
   /**
