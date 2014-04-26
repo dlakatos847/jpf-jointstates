@@ -1,11 +1,14 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.annotation.MJI;
+import hu.bme.mit.ftsrg.jointstates.command.Aggregator;
 import hu.bme.mit.ftsrg.jointstates.command.JointStateTransition;
+import hu.bme.mit.ftsrg.jointstates.listener.JointstatesListener;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Inet4Address;
 import java.net.Socket;
@@ -15,8 +18,9 @@ public class JPF_java_io_InputStream extends NativePeer {
   @MJI
   public int native_read__II___3I(MJIEnv env, int objRef, int lastJointStateId, int readDepth) throws IOException, ClassNotFoundException {
     logger.warning("jointstates read depth was " + readDepth + " before native reading");
-    Socket s = new Socket(Inet4Address.getByName("localhost"), 8082);
+    Socket s = new Socket(Inet4Address.getByName("localhost"), Aggregator.AGGREGATOR_QUERY_PORT);
     OutputStream os = s.getOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(os);
     InputStream is = s.getInputStream();
     ObjectInputStream ois = new ObjectInputStream(is);
     JointStateTransition[] transitions;
@@ -26,6 +30,7 @@ public class JPF_java_io_InputStream extends NativePeer {
     // networking
     logger.warning("jointstates querying possible transitions after joint state id " + lastJointStateId);
     os.write(lastJointStateId);
+    oos.writeObject(JointstatesListener.side);
     transitions = (JointStateTransition[]) ois.readObject();
     s.close();
 

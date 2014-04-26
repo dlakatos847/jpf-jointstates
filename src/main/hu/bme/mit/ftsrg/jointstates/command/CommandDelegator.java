@@ -20,6 +20,7 @@ package hu.bme.mit.ftsrg.jointstates.command;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.JPF;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
+import hu.bme.mit.ftsrg.jointstates.listener.JointstatesListener;
 
 import java.util.logging.Logger;
 
@@ -63,9 +64,9 @@ public class CommandDelegator {
 
     this.sendInstance = new MessageSender(logger);
     this.receiveInstance = new MessageReceiver(this.side, logger);
-    this.sendThread = new Thread(this.sendInstance);
+    this.sendThread = new Thread(this.sendInstance, JointstatesListener.side + "_SENDER");
     this.sendThread.setDaemon(true);
-    this.receiveThread = new Thread(this.receiveInstance);
+    this.receiveThread = new Thread(this.receiveInstance, JointstatesListener.side + "_RECEIVER");
     this.receiveThread.setDaemon(true);
     this.sendThread.start();
     this.receiveThread.start();

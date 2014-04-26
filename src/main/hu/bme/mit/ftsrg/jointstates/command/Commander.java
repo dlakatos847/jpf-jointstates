@@ -17,7 +17,6 @@
  */
 package hu.bme.mit.ftsrg.jointstates.command;
 
-import hu.bme.mit.ftsrg.jointstates.command.Aggregator.AggregatorType;
 import hu.bme.mit.ftsrg.jointstates.core.Side;
 
 import java.util.logging.Logger;
@@ -31,35 +30,44 @@ public class Commander {
   private static Commander commander;
   static boolean done = false;
   static MessageType lastMessage = MessageType.INIT;
-  static Aggregator addMessageAggregator = null;
-  static Aggregator queryMessageAggregator = null;
 
   Thread sendThread;
   Thread receiveThread;
+  Thread addAggregatorThread;
+  Thread queryAggregatorThread;
   MessageSender sendInstance;
   MessageReceiver receiveInstance;
+  Aggregator addAggregatorInstance = null;
+  Aggregator queryAggregatorInstance = null;
 
   static {
     logger = Logger.getLogger(Commander.class.getCanonicalName());
-    addMessageAggregator = new Aggregator(AggregatorType.ADD, logger);
-    queryMessageAggregator = new Aggregator(AggregatorType.QUERY, logger);
   }
 
   public Commander() {
     this.sendInstance = new MessageSender();
     this.receiveInstance = new MessageReceiver(Side.COMMANDER);
-    this.sendThread = new Thread(this.sendInstance);
-    this.receiveThread = new Thread(this.receiveInstance);
+    this.addAggregatorInstance = new Aggregator(AggregatorType.ADD);
+    this.queryAggregatorInstance = new Aggregator(AggregatorType.QUERY);
+
+    this.sendThread = new Thread(this.sendInstance, "COMMANDER_SENDER");
+    this.receiveThread = new Thread(this.receiveInstance, "COMMANDER_RECEIVER");
+    this.addAggregatorThread = new Thread(this.addAggregatorInstance, "COMMANDER_ADD_AGGREGATOR");
+    this.queryAggregatorThread = new Thread(this.queryAggregatorInstance, "COMMANDER_QUERY_AGGREGATOR");
+
     this.sendThread.start();
     this.receiveThread.start();
+    this.addAggregatorThread.start();
+    this.queryAggregatorThread.start();
   }
 
+  /**
+   * The commander waits for INIT messages from the CLIENT and SERVER slaves.
+   * When received them replies with an INIT message to both of them.
+   */
   public static void initialize() {
     commander = new Commander();
-    logger.info("jointstates commander is ready to initialize command subsystem");
-
-    addMessageAggregator.start();
-    queryMessageAggregator.start();
+    System.out.println("jointstates commander is ready to initialize command subsystem");
 
     try {
       Message msg;
@@ -71,7 +79,7 @@ public class Commander {
           logger.severe("jointstates commander initialization failed");
           terminate();
         } else {
-          logger.info("jointstates commander received init message");
+          System.out.println("jointstates commander received init message");
         }
       }
 
@@ -101,7 +109,7 @@ public class Commander {
     done = true;
     // commander.sendThread.interrupt();
     // commander.receiveThread.interrupt();
-    logger.info("jointstates command delegator stopped successfully");
+    System.out.println("jointstates command delegator stopped successfully");
   }
 
   public static Message receiveMessage() throws InterruptedException {
@@ -125,27 +133,29 @@ public class Commander {
 
   public static void search() {
     try {
+      Message msg = null;
       while (!done) {
-        Message msg = receiveMessage();
-        if (msg.getMsgType() == MessageType.ERROR) {
-          logger.severe("jointstates error received from " + msg.getSource());
-          break;
-          // } else if (msg.getMsgType() == MessageType.END) {
-          // logger.info("jointstates search ended");
-          // break;
-        } else if (msg.getMsgType() == MessageType.WRITEREADY) {
-          if (receiveMessage().getMsgType() != MessageType.WRITEREADY) {
-            logger.severe("jointstates protocol error: WRITEREADY -> " + msg.getMsgType());
-          }
-          sendWrite();
-          if (receiveMessage().getMsgType() != MessageType.READREADY) {
-            logger.severe("jointstates protocol error: READREADY -> " + msg.getMsgType());
-          }
-          if (receiveMessage().getMsgType() != MessageType.READREADY) {
-            logger.severe("jointstates protocol error: READREADY -> " + msg.getMsgType());
-          }
-          sendRead();
+        // receive 1st WRITEREADY
+        if ((msg = receiveMessage()).getMsgType() != MessageType.WRITEREADY) {
+          logger.severe("jointstates protocol error: WRITEREADY -> " + msg.getMsgType());
         }
+        // receive 2nd WRITEREADY
+        if ((msg = receiveMessage()).getMsgType() != MessageType.WRITEREADY) {
+          logger.severe("jointstates protocol error: WRITEREADY -> " + msg.getMsgType());
+        }
+        // send WRITEs to slaves
+        sendWrite();
+
+        // receive 1st READREADY
+        if ((msg = receiveMessage()).getMsgType() != MessageType.READREADY) {
+          logger.severe("jointstates protocol error: READREADY -> " + msg.getMsgType());
+        }
+        // receive 2nd READREADY
+        if ((msg = receiveMessage()).getMsgType() != MessageType.READREADY) {
+          logger.severe("jointstates protocol error: READREADY -> " + msg.getMsgType());
+        }
+        // send READs to slaves
+        sendRead();
       }
     } catch (InterruptedException e) {
       logger.severe(e.getMessage());
@@ -153,10 +163,9 @@ public class Commander {
   }
 
   public static void main(String[] args) {
+    //
     Commander.initialize();
-
     search();
-
     Commander.end();
   }
 }

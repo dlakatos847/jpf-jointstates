@@ -31,30 +31,27 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * @author David Lakatos <david.lakatos.hu@gmail.com>
  * 
  */
-public class Aggregator extends Thread {
-  private static Logger logger = null;
-
-  public enum AggregatorType {
-    ADD, QUERY
-  }
+public class Aggregator implements Runnable {
 
   // parent JointStateId -> transitions
-  private static Map<TransitionSourceIndicator, Set<JointStateTransition>> jointStateTransitions = new HashMap<TransitionSourceIndicator, Set<JointStateTransition>>();
+  private static Map<Integer, Set<JointStateTransition>> clientTransitions = new HashMap<Integer, Set<JointStateTransition>>();
+  private static Map<Integer, Set<JointStateTransition>> serverTransitions = new HashMap<Integer, Set<JointStateTransition>>();
   private static int nextJointStateId = 1;
   private static Map<AggregatorType, Integer> aggregatorTypeListenPort = new HashMap<AggregatorType, Integer>();
+  public static int AGGREGATOR_ADD_PORT = 8081;
+  public static int AGGREGATOR_QUERY_PORT = 8082;
 
   static {
-    aggregatorTypeListenPort.put(AggregatorType.ADD, 8081);
-    aggregatorTypeListenPort.put(AggregatorType.QUERY, 8082);
+    aggregatorTypeListenPort.put(AggregatorType.ADD, AGGREGATOR_ADD_PORT);
+    aggregatorTypeListenPort.put(AggregatorType.QUERY, AGGREGATOR_QUERY_PORT);
 
-    jointStateTransitions.put(new TransitionSourceIndicator(0, Side.CLIENT), new HashSet<JointStateTransition>());
-    jointStateTransitions.put(new TransitionSourceIndicator(0, Side.SERVER), new HashSet<JointStateTransition>());
+    // clientTransitions.put(0, new HashSet<JointStateTransition>());
+    // serverTransitions.put(0, new HashSet<JointStateTransition>());
   }
 
   private AggregatorType type;
@@ -65,13 +62,8 @@ public class Aggregator extends Thread {
    * @param type
    *          Defines whether it is an ADD or QUERY type Aggregator
    */
-  public Aggregator(AggregatorType type, Logger logger) {
+  public Aggregator(AggregatorType type) {
     this.type = type;
-    synchronized (Aggregator.logger) {
-      if (Aggregator.logger == null) {
-        Aggregator.logger = logger;
-      }
-    }
   }
 
   /*
@@ -80,6 +72,8 @@ public class Aggregator extends Thread {
    */
   @Override
   public void run() {
+    System.out.println("jointstates Aggregator " + this.type + " started");
+
     try {
       ServerSocket ss = new ServerSocket(Aggregator.aggregatorTypeListenPort.get(this.type));
       while (!Thread.interrupted()) {
@@ -104,78 +98,91 @@ public class Aggregator extends Thread {
         }
       }
       ss.close();
-    } catch (IOException e) {
+    } catch (IOException | ClassNotFoundException e) {
       e.printStackTrace();
     }
   }
 
-  private void runAdd(Socket s) throws IOException {
+  private void runAdd(Socket s) throws IOException, ClassNotFoundException {
+    InputStream is = s.getInputStream();
+    ObjectInputStream ois = new ObjectInputStream(is);
+    OutputStream os = s.getOutputStream();
+    // ObjectOutputStream oos = new ObjectOutputStream(os);
+    int parentJointStatId;
+
+    // networking
+    parentJointStatId = is.read();
+    Side destination = (Side) ois.readObject();
+    int message = is.read();
+
+    // generating the possible transition to add
+    JointStateTransition newTransition = new JointStateTransition(message, nextJointStateId);
+
+    // selecting the approrpiate map
+    Map<Integer, Set<JointStateTransition>> actualTransitions = (destination == Side.CLIENT ? Aggregator.clientTransitions : Aggregator.serverTransitions);
+
+    synchronized (actualTransitions) {
+      // Create the record if does not exist
+      if (!actualTransitions.containsKey(parentJointStatId)) {
+        actualTransitions.put(parentJointStatId, new HashSet<JointStateTransition>());
+        System.out.println("[" + parentJointStatId + "] Created empty container for transitions " + destination);
+      }
+
+      // add message to the possible JointState transitions
+      Set<JointStateTransition> existingTransitions = actualTransitions.get(parentJointStatId);
+
+      // The transition is not in the set (added successfully)
+      // * add it to the set
+      // * return the new joint state id
+      if (existingTransitions.add(newTransition)) {
+        // create a new parent for further transitions
+        os.write(nextJointStateId);
+        System.out.println("[" + parentJointStatId + "] Added new transition " + newTransition + " to " + destination);
+        nextJointStateId++;
+      }
+      // The transition is already in the set
+      // TODO should use something like Google Guava to look for the transition
+      // by predicates (more elegant)
+      // * search for the identical transition
+      // * return its next joint state id
+      else {
+        Iterator<JointStateTransition> transitionIterator = existingTransitions.iterator();
+        JointStateTransition actualTransition = null;
+        while (transitionIterator.hasNext()) {
+          actualTransition = transitionIterator.next();
+          if (actualTransition.equals(newTransition)) {
+            os.write(actualTransition.getNextJointStateId());
+            break;
+          }
+        }
+        System.out.println("[" + parentJointStatId + "] Transition already stored " + actualTransition);
+      }
+    }
+  }
+
+  private void runQuery(Socket s) throws IOException, ClassNotFoundException {
     InputStream is = s.getInputStream();
     ObjectInputStream ois = new ObjectInputStream(is);
     OutputStream os = s.getOutputStream();
     ObjectOutputStream oos = new ObjectOutputStream(os);
-    TransitionSourceIndicator tsi = (TransitionSourceIndicator) ois.readObject();
-    int message = is.read();
-    JointStateTransition newJst = new JointStateTransition(message, nextJointStateId);
+    int parentJointStateId;
+    Side destination;
 
-    synchronized (Aggregator.jointStateTransitions) {
-      // the parent TSI must already exist
-      if (!Aggregator.jointStateTransitions.containsKey(tsi)) {
-        logger.severe("the given key " + tsi + " is not in jointStateTransitions");
-      }
+    // networking
+    parentJointStateId = is.read();
+    destination = (Side) ois.readObject();
 
-      // add message to the possible JointState transitions
-      Set<JointStateTransition> jstSet = jointStateTransitions.get(tsi);
+    // selecting the approrpiate map
+    Map<Integer, Set<JointStateTransition>> actualTransitions = (destination == Side.CLIENT ? Aggregator.clientTransitions : Aggregator.serverTransitions);
 
-      // The transition is not in the set
-      if (jstSet.add(newJst)) {
-        // create a new parent for further transitions
-        jointStateTransitions.put(new TransitionSourceIndicator(nextJointStateId, tsi.getMessageDestination()), new HashSet<JointStateTransition>());
-        os.write(nextJointStateId);
-        System.out.println("[" + tsi.getParentJointStateId() + "] Added new transition\tmessage: " + message + "\tnext joint state id: " + nextJointStateId
-            + "\tdestination: " + tsi.getMessageDestination());
-        nextJointStateId++;
-      }
-      // The transition is already in the set
-      else {
-        Iterator<JointStateTransition> iter = jstSet.iterator();
-        JointStateTransition exJst = null;
-        while (iter.hasNext()) {
-          exJst = iter.next();
-          if (exJst.equals(newJst)) {
-            os.write(exJst.getNextJointStateId());
-            break;
-          }
-        }
-        System.out
-            .println("[" + lastJointStateId + "] Transition already stored\tmessage: " + message + "\tnext JointState ID: " + exJst.getNextJointStateId());
-      }
+    Set<JointStateTransition> transitions;
+    synchronized (actualTransitions) {
+      transitions = actualTransitions.get(parentJointStateId);
+      JointStateTransition transitionArray[] = new JointStateTransition[transitions.size()];
+      transitions.toArray(transitionArray);
+      oos.writeObject(transitionArray);
     }
-  }
-
-  private void runQuery(Socket s) throws IOException {
-    InputStream is = s.getInputStream();
-    OutputStream os = s.getOutputStream();
-    ObjectOutputStream oos = new ObjectOutputStream(os);
-    int lastJointStateId = is.read();
-    synchronized (jointStateTransitions) {
-      Set<JointStateTransition> jsts = jointStateTransitions.get(lastJointStateId);
-      JointStateTransition jstsArray[] = new JointStateTransition[jsts.size()];
-      jsts.toArray(jstsArray);
-      oos.writeObject(jstsArray);
-    }
-    System.out.println("[" + lastJointStateId + "] Queried transitions");
-  }
-
-  /**
-   * @param args
-   */
-  public static void main(String[] args) {
-    Aggregator addMessageAggregator = new Aggregator(AggregatorType.ADD);
-    Aggregator queryMessageAggregator = new Aggregator(AggregatorType.QUERY);
-
-    addMessageAggregator.start();
-    queryMessageAggregator.start();
+    System.out.println("[" + parentJointStateId + "] Queried transitions from " + destination + " " + transitions);
   }
 
 }

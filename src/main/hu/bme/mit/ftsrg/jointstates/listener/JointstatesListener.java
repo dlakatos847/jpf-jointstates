@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 public class JointstatesListener extends ListenerAdapter {
   protected static final Logger logger = JPF.getLogger(JointstatesListener.class.getCanonicalName());
   public static Side side;
+  public static Side otherSide;
 
   /*
    * Make sure jpf-jointstates master-JPF is available (non-Javadoc)
@@ -56,8 +57,10 @@ public class JointstatesListener extends ListenerAdapter {
     if (sideConfig != null) {
       if (sideConfig.equals("client")) {
         JointstatesListener.side = Side.CLIENT;
+        JointstatesListener.otherSide = Side.SERVER;
       } else if (sideConfig.equals("server")) {
         JointstatesListener.side = Side.SERVER;
+        JointstatesListener.otherSide = Side.CLIENT;
       } else {
         logger.severe("jointstates.side parameter has invalid value. Allowed values are: [client, server]");
         search.terminate();

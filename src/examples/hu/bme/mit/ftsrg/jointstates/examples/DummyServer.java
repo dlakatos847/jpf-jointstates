@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Random;
 
 public class DummyServer implements Runnable {
   private int port = -1;
@@ -35,7 +36,12 @@ public class DummyServer implements Runnable {
       if (r == 1) {
         w = 10 * r + 1;
       } else {
-        w = 10 * r + 5;
+        Random rand = new Random(System.currentTimeMillis());
+        if (rand.nextBoolean()) {
+          w = 10 * r + 1;
+        } else {
+          w = 10 * r + 5;
+        }
       }
 
       System.out.println("write " + w + " to port " + this.port);

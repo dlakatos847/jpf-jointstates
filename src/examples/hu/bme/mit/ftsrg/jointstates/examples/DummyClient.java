@@ -84,7 +84,7 @@ public class DummyClient implements Runnable {
     if (received == expected) {
       System.out.println("expected");
     } else {
-      System.out.println("not expected");
+      System.out.println("unexpected");
     }
   }
 

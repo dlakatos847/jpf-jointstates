@@ -64,12 +64,16 @@ public class JointStateTransition implements Serializable {
    */
   @Override
   public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+
     if (!(obj instanceof JointStateTransition)) {
       return false;
-    } else {
-      JointStateTransition jstObj = (JointStateTransition) obj;
-      return jstObj.getMessage() == getMessage();
     }
+
+    JointStateTransition jst = (JointStateTransition) obj;
+    return this.message == jst.getMessage();
   }
 
   /*
@@ -78,6 +82,15 @@ public class JointStateTransition implements Serializable {
    */
   @Override
   public int hashCode() {
-    return getMessage();
+    return 31 * (41 + this.message);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see java.lang.Object#toString()
+   */
+  @Override
+  public String toString() {
+    return "[message: " + this.message + ", next jointstate id: " + this.nextJointStateId + "]";
   }
 }
