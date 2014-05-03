@@ -7,7 +7,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Random;
 
-public class DummyClient implements Runnable {
+public class BuggyClient implements Runnable {
   private int port = -1;
 
   /*
@@ -26,7 +26,7 @@ public class DummyClient implements Runnable {
   /**
    * @param port
    */
-  public DummyClient(int port) {
+  public BuggyClient(int port) {
     super();
     this.port = port;
   }
@@ -85,6 +85,13 @@ public class DummyClient implements Runnable {
       System.out.println("expected");
     } else {
       System.out.println("unexpected");
+      synchronized (this) {
+        try {
+          this.wait();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
     }
   }
 
@@ -100,7 +107,7 @@ public class DummyClient implements Runnable {
 
     for (String i : args) {
       port = Integer.parseInt(i);
-      Thread t = new Thread(new DummyClient(port));
+      Thread t = new Thread(new BuggyClient(port));
       t.start();
     }
 
