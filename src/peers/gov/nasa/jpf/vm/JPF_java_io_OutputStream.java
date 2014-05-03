@@ -39,6 +39,9 @@ public class JPF_java_io_OutputStream extends NativePeer {
     newJointStateId = is.read();
     s.close();
 
+    logger.warning("native write current JSID: " + lastJointStateId + ", recipient: " + JointstatesListener.otherSide + ", message: " + messageByteArray[0]
+        + ", new JSID: " + newJointStateId);
+
     return newJointStateId;
   }
 

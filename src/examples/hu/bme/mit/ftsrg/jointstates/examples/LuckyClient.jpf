@@ -1,10 +1,8 @@
 # Dummy JPF config
-target=hu.bme.mit.ftsrg.jointstates.examples.BuggyClient
+target=hu.bme.mit.ftsrg.jointstates.examples.LuckyClient
 target.args=8080
 jointstates.side=client
 log.level=warn
 search.class=hu.bme.mit.ftsrg.jointstates.search.JointstatesHeuristicSearch
 jvm.insn_factory.class=hu.bme.mit.ftsrg.jointstates.core.JointstatesInstructionFactory
 report.console.property_violation=error,snapshot,trace
-listener+=,.listener.DeadlockAnalyzer
-deadlock.format=essential

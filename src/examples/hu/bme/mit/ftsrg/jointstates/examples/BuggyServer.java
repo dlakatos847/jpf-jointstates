@@ -34,11 +34,11 @@ public class BuggyServer implements Runnable {
 
       int w;
       if (r == 1) {
-        w = 10 * r + 1;
+        w = 10 * r;
       } else {
         Random rand = new Random(System.currentTimeMillis());
         if (rand.nextBoolean()) {
-          w = 10 * r + 1;
+          w = 10 * r;
         } else {
           w = 10 * r + 5;
         }

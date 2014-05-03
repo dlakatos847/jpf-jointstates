@@ -6,13 +6,13 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class DummyServer implements Runnable {
+public class LuckyServer implements Runnable {
   private int port = -1;
 
   /**
    * @param port
    */
-  public DummyServer(int port) {
+  public LuckyServer(int port) {
     super();
     this.port = port;
   }
@@ -59,7 +59,7 @@ public class DummyServer implements Runnable {
 
     for (String i : args) {
       port = Integer.parseInt(i);
-      Thread t = new Thread(new DummyServer(port));
+      Thread t = new Thread(new LuckyServer(port));
       t.start();
     }
 
