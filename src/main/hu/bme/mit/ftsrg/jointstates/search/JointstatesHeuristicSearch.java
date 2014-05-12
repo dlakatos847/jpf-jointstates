@@ -71,7 +71,7 @@ public class JointstatesHeuristicSearch extends SimplePriorityHeuristic {
 
   /*
    * The heuristic goes this way. Do a DFS search but don't cross joint state
-   * levels. When out of uninteresting states produced by DFS, get the next
+   * depths. When out of uninteresting states produced by DFS, get the next
    * interesting joint state and explore its state space by DFS.
    * @see
    * gov.nasa.jpf.search.heuristic.SimplePriorityHeuristic#computeHeuristicValue
